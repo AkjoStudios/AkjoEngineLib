@@ -1,5 +1,5 @@
 package com.akjostudios.engine.api.scheduling;
 
-public enum RenderLane {
+public enum SchedulerLane {
     RENDER, AUDIO
 }

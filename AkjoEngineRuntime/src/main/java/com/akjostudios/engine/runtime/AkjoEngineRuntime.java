@@ -2,18 +2,28 @@ package com.akjostudios.engine.runtime;
 
 import com.akjostudios.engine.api.AkjoApplication;
 import com.akjostudios.engine.api.IAkjoApplication;
+import com.akjostudios.engine.api.common.Mailbox;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
 import com.akjostudios.engine.runtime.impl.lifecycle.LifecycleImpl;
+import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
+import com.akjostudios.engine.runtime.impl.scheduling.SchedulerImpl;
+import com.akjostudios.engine.runtime.impl.scheduling.TickSchedulerImpl;
+import com.akjostudios.engine.runtime.impl.threading.ThreadingImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+
+import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER_THREAD_NAME;
+import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.LOGIC_THREAD_NAME;
+import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.AUDIO_THREAD_NAME;
 
 @RequiredArgsConstructor
 public class AkjoEngineRuntime implements SmartLifecycle {
@@ -70,6 +80,13 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             }
 
             // Initialize threading system
+            Mailbox renderMailbox = new Mailbox(RENDER_THREAD_NAME, context.logger(RENDER_THREAD_NAME));
+            Mailbox logicMailbox = new Mailbox(LOGIC_THREAD_NAME, context.logger(LOGIC_THREAD_NAME));
+            Mailbox audioMailbox = new Mailbox(AUDIO_THREAD_NAME, context.logger(AUDIO_THREAD_NAME));
+            context.__engine_setThreading(
+                    EngineTokens.token(),
+                    new ThreadingImpl(renderMailbox, logicMailbox, audioMailbox)
+            );
             context.threading().__engine_init(
                     EngineTokens.token(),
                     new AkjoEngineExceptionHandler(
@@ -81,6 +98,26 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     ),
                     context.logger(THREADING_LOGGER_NAME)
             );
+
+            // Initialize scheduling system
+            FrameSchedulerImpl renderScheduler = new FrameSchedulerImpl(renderMailbox, () -> context.threading().isRenderThread());
+            TickSchedulerImpl logicScheduler = new TickSchedulerImpl(logicMailbox, () -> context.threading().isLogicThread());
+            FrameSchedulerImpl audioScheduler = new FrameSchedulerImpl(audioMailbox, () -> context.threading().isAudioThread());
+            context.__engine_setScheduler(
+                    EngineTokens.token(),
+                    new SchedulerImpl(
+                            Executors.newScheduledThreadPool(1, runnable -> {
+                                Thread thread = new Thread(runnable);
+                                thread.setDaemon(true);
+                                return thread;
+                            }),
+                            logicMailbox,
+                            renderScheduler, logicScheduler, audioScheduler
+                    )
+            );
+            context.threading().__engine_setRenderScheduler(EngineTokens.token(), renderScheduler);
+            context.threading().__engine_setLogicScheduler(EngineTokens.token(), logicScheduler);
+            context.threading().__engine_setAudioScheduler(EngineTokens.token(), audioScheduler);
 
             // Initialize application
             application.onInit();

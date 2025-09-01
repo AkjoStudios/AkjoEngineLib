@@ -1,28 +1,29 @@
 package com.akjostudios.engine.runtime.impl;
 
 import com.akjostudios.engine.api.IAkjoApplicationContext;
-import com.akjostudios.engine.api.common.Mailbox;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
+import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
-import com.akjostudios.engine.runtime.impl.threading.ThreadingImpl;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
+import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.DEFAULT_MAIN_THREAD_NAME;
+import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.MAIN_THREAD_NAME;
+
 public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private static final String DEFAULT_BASE_LOGGER_NAME = "app";
-
-    private final Threading threading = new ThreadingImpl(
-            new Mailbox("render", logger("engine.mailbox.render")),
-            new Mailbox("audio", logger("engine.mailbox.audio"))
-    );
 
     @Setter
     private volatile String baseLoggerName = DEFAULT_BASE_LOGGER_NAME;
 
     private Lifecycle lifecycle;
+    private Threading threading;
+    private Scheduler scheduler;
 
     @Override
     public @NotNull Logger logger() {
@@ -48,19 +49,72 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     }
 
     @Override
-    public @NotNull Threading threading() { return threading; }
+    public @NotNull Threading threading() {
+        if (threading == null) {
+            throw new IllegalStateException("❗ Threading object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return threading;
+    }
+
+    @Override
+    public @NotNull Scheduler scheduler() {
+        if (scheduler == null) {
+            throw new IllegalStateException("❗ Scheduler object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return scheduler;
+    }
 
     /**
      * Sets the internal lifecycle object for this application.
-     * @apiNote Should only be called by the runtime implementation of the engine.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
      * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
      */
     @Override
     public void __engine_setLifecycle(
             @NotNull Object token,
             @NotNull Lifecycle lifecycle
-    ) throws IllegalCallerException {
+    ) throws IllegalCallerException, IllegalStateException {
         EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), DEFAULT_MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Lifecycle object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
         this.lifecycle = lifecycle;
+    }
+
+    /**
+     * Sets the internal threading object for this application.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setThreading(
+            @NotNull Object token,
+            @NotNull Threading threading
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), DEFAULT_MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Threading object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.threading = threading;
+    }
+
+    /**
+     * Sets the internal scheduling object for this application.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setScheduler(
+            @NotNull Object token,
+            @NotNull Scheduler scheduler
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Scheduler object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.scheduler = scheduler;
     }
 }

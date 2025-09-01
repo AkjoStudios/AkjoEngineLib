@@ -4,7 +4,12 @@ import com.akjostudios.engine.api.common.Mailbox;
 import com.akjostudios.engine.api.common.Waiter;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.logging.Logger;
+import com.akjostudios.engine.api.scheduling.FrameScheduler;
+import com.akjostudios.engine.api.scheduling.TickScheduler;
 import com.akjostudios.engine.api.threading.Threading;
+import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
+import com.akjostudios.engine.runtime.impl.scheduling.TickSchedulerImpl;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,13 +20,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @RequiredArgsConstructor
 public final class ThreadingImpl implements Threading {
-    private static final String DEFAULT_MAIN_THREAD_NAME = "main";
+    public static final String DEFAULT_MAIN_THREAD_NAME = "main";
 
-    private static final String MAIN_THREAD_NAME = "Runtime";
-    private static final String RENDER_THREAD_NAME = "Render";
-    private static final String LOGIC_THREAD_NAME = "Logic";
-    private static final String AUDIO_THREAD_NAME = "Audio";
-    private static final String WORKER_THREAD_PREFIX = "Worker";
+    public static final String MAIN_THREAD_NAME = "Runtime";
+    public static final String RENDER_THREAD_NAME = "Render";
+    public static final String LOGIC_THREAD_NAME = "Logic";
+    public static final String AUDIO_THREAD_NAME = "Audio";
+    public static final String WORKER_THREAD_PREFIX = "Worker";
 
     private static final int MAILBOX_DRAIN_SIZE = 1024;
     private static final long MAILBOX_EMPTY_PARK_TIME_NS = 1_000_000L;
@@ -42,8 +47,12 @@ public final class ThreadingImpl implements Threading {
     // Render thread
     private volatile Thread renderThread;
     private final AtomicBoolean renderRunning = new AtomicBoolean(false);
+
     private final Waiter renderWaiter = new Waiter();
+    @Getter
     private final Mailbox renderMailbox;
+
+    private FrameSchedulerImpl renderScheduler;
 
     // Logic thread
     private volatile Thread logicThread;
@@ -51,29 +60,26 @@ public final class ThreadingImpl implements Threading {
     private double logicStepSeconds = 1.0 / 60.0;
     private volatile LogicCallback logicCallback;
 
+    private final Waiter logicWaiter = new Waiter();
+    @Getter
+    private final Mailbox logicMailbox;
+
+    private TickSchedulerImpl logicScheduler;
+
     // Audio thread
     private volatile Thread audioThread;
     private final AtomicBoolean audioRunning = new AtomicBoolean(false);
+
     private final Waiter audioWaiter = new Waiter();
+    @Getter
     private final Mailbox audioMailbox;
+
+    private FrameSchedulerImpl audioScheduler;
 
     // Worker threads
     private ExecutorService workerPool;
     private final AtomicInteger workerId = new AtomicInteger(1);
 
-    @Override
-    public void runOnRender(@NotNull Runnable task) {
-        ensureInitialized();
-        renderMailbox.post(task);
-        renderWaiter.wake();
-    }
-
-    @Override
-    public void runOnAudio(@NotNull Runnable task) {
-        ensureInitialized();
-        audioMailbox.post(task);
-        audioWaiter.wake();
-    }
 
     @Override
     public void runOnWorker(@NotNull Runnable task) {
@@ -98,6 +104,12 @@ public final class ThreadingImpl implements Threading {
     @Override
     public boolean isAudioThread() { return Boolean.TRUE.equals(IS_AUDIO.get()); }
 
+    /**
+     * Initializes the threading implementation.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread AND only once.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
     @Override
     public void __engine_init(
             @NotNull Object token,
@@ -106,7 +118,7 @@ public final class ThreadingImpl implements Threading {
     ) throws IllegalCallerException, IllegalStateException {
         EngineTokens.verify(token);
         if (!Objects.equals(Thread.currentThread().getName(), DEFAULT_MAIN_THREAD_NAME)) {
-            throw new IllegalStateException("❗ Threading is not being initialized on main thread!");
+            throw new IllegalStateException("❗ Threading is not being initialized on main thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         if (!initialized.compareAndSet(false, true)) { return; }
 
@@ -120,9 +132,16 @@ public final class ThreadingImpl implements Threading {
 
         // Setup error handlers of mailboxes
         renderMailbox.errorHandler(this::handleUncaught);
+        logicMailbox.errorHandler(this::handleUncaught);
         audioMailbox.errorHandler(this::handleUncaught);
     }
 
+    /**
+     * Starts the threading implementation.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread AND only once.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
     @Override
     public void __engine_start(
             @NotNull Object token,
@@ -132,7 +151,7 @@ public final class ThreadingImpl implements Threading {
         EngineTokens.verify(token);
         ensureInitialized();
         if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
-            throw new IllegalStateException("❗ Threading is not being started on runtime thread!");
+            throw new IllegalStateException("❗ Threading is not being started on runtime thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         if (!started.compareAndSet(false, true)) { return; }
 
@@ -171,6 +190,11 @@ public final class ThreadingImpl implements Threading {
         audioThread.start();
     }
 
+    /**
+     * Stops the threading implementation.
+     * @apiNote Must be called by the runtime implementation of the engine AND only once.
+     * @throws IllegalCallerException When this method is called externally.
+     */
     @Override
     public void __engine_stop(
             @NotNull Object token
@@ -185,6 +209,7 @@ public final class ThreadingImpl implements Threading {
 
         // Stop logic thread
         logicRunning.set(false);
+        logicWaiter.wake();
         join(logicThread);
 
         // Stop render thread
@@ -207,11 +232,81 @@ public final class ThreadingImpl implements Threading {
         }
     }
 
+    /**
+     * Sets the render scheduler for the threading system.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     * @throws IllegalArgumentException When this method does not get a frame scheduler of type FrameSchedulerImpl.
+     */
+    @Override
+    public void __engine_setRenderScheduler(
+            @NotNull Object token,
+            @NotNull FrameScheduler scheduler
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Render scheduler must be set on the main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        if (!(scheduler instanceof FrameSchedulerImpl impl)) {
+            throw new IllegalArgumentException("❗ Render scheduler must be of type FrameSchedulerImpl! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.renderScheduler = impl;
+    }
+
+    /**
+     * Sets the logic scheduler for the threading system.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     * @throws IllegalArgumentException When this method does not get a tick scheduler of type TickSchedulerImpl.
+     */
+    @Override
+    public void __engine_setLogicScheduler(
+            @NotNull Object token,
+            @NotNull TickScheduler scheduler
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Logic scheduler must be set on the main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        if (!(scheduler instanceof TickSchedulerImpl impl)) {
+            throw new IllegalArgumentException("❗ Logic scheduler must be of type TickSchedulerImpl! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.logicScheduler = impl;
+    }
+
+    /**
+     * Sets the audio scheduler for the threading system.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     * @throws IllegalArgumentException When this method does not get a frame scheduler of type FrameSchedulerImpl.
+     */
+    @Override
+    public void __engine_setAudioScheduler(
+            @NotNull Object token,
+            @NotNull FrameScheduler scheduler
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Audio scheduler must be set on the main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        if (!(scheduler instanceof FrameSchedulerImpl impl)) {
+            throw new IllegalArgumentException("❗ Audio scheduler must be of type FrameSchedulerImpl! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.audioScheduler = impl;
+    }
+
     private void renderLoop() {
         IS_RENDER.set(true);
         try {
             while (renderRunning.get()) {
                 renderMailbox.drain(MAILBOX_DRAIN_SIZE);
+
+                if (renderScheduler != null) {
+                    renderScheduler.onFrame();
+                }
 
                 if (renderMailbox.isEmpty()) {
                     renderWaiter.park(MAILBOX_EMPTY_PARK_TIME_NS);
@@ -230,14 +325,21 @@ public final class ThreadingImpl implements Threading {
             long prev = System.nanoTime();
             long acc = 0L;
             while (logicRunning.get()) {
+                logicMailbox.drain(MAILBOX_DRAIN_SIZE);
+
                 long now = System.nanoTime();
                 acc += now - prev;
                 prev = now;
 
+                boolean didUpdate = false;
                 while (acc >= stepNanos && logicRunning.get()) {
                     try {
                         if (logicCallback != null) {
                             logicCallback.onUpdate(logicStepSeconds);
+                            if (logicScheduler != null) {
+                                logicScheduler.onTick();
+                            }
+                            didUpdate = true;
                         }
                     } catch (Throwable t) {
                         handleUncaught(t);
@@ -245,9 +347,14 @@ public final class ThreadingImpl implements Threading {
                     acc -= stepNanos;
                 }
 
-                Thread.onSpinWait();
+                if (!didUpdate && logicMailbox.isEmpty()) {
+                    logicWaiter.park(MAILBOX_EMPTY_PARK_TIME_NS);
+                } else {
+                    Thread.onSpinWait();
+                }
             }
         } finally {
+            logicMailbox.shutdownAndDrainAll();
             IS_LOGIC.remove();
         }
     }
@@ -257,6 +364,10 @@ public final class ThreadingImpl implements Threading {
         try {
             while (audioRunning.get()) {
                 audioMailbox.drain(MAILBOX_DRAIN_SIZE);
+
+                if (audioScheduler != null) {
+                    audioScheduler.onFrame();
+                }
 
                 if (audioMailbox.isEmpty()) {
                     audioWaiter.park(MAILBOX_EMPTY_PARK_TIME_NS);
@@ -269,7 +380,7 @@ public final class ThreadingImpl implements Threading {
     }
 
     private void handleUncaught(Throwable t) {
-        if (exceptionHandler == null) { log.error(t, "Uncaught exception in thread '{}':", Thread.currentThread().getName()); }
+        if (exceptionHandler == null) { log.error(t, "❗ Uncaught exception in thread '{}':", Thread.currentThread().getName()); }
         else { exceptionHandler.uncaughtException(Thread.currentThread(), t); }
     }
 

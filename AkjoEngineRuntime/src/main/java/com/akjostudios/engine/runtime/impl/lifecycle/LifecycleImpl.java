@@ -18,6 +18,9 @@ public final class LifecycleImpl implements Lifecycle {
     private final Supplier<Boolean> runningSupplier;
     private final BiConsumer<String, Throwable> stopHandler;
 
+    /**
+     * @apiNote This method does not work in the initialization phase.
+     */
     @Override
     public void stopApplication(@Nullable Throwable throwable, @Nullable String reason) {
         if (!stopping.compareAndSet(false, true)) { return; }
