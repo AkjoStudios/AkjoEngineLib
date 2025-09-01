@@ -5,7 +5,6 @@ import com.akjostudios.engine.runtime.initializers.AkjoEnginePackageInitializer;
 import com.akjostudios.engine.runtime.initializers.AkjoEnginePropertyInitializer;
 import com.akjostudios.engine.runtime.initializers.AkjoEngineRuntimeInitializer;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
