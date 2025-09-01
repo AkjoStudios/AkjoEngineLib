@@ -94,7 +94,10 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                             properties.appName(),
                             properties.appVersion(),
                             systemProperties.get(ENGINE_VERSION_PROPERTY).toString(),
-                            this::stop
+                            thread -> {
+                                thread.interrupt();
+                                this.safeStop();
+                            }
                     ),
                     context.logger(THREADING_LOGGER_NAME)
             );
@@ -152,17 +155,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
         synchronized (lifecycleLock) {
             if (!running.get()) { return; }
             Thread.currentThread().setName(LIFECYCLE_THREAD_NAME);
-            try {
-                // Stop application
-                application.onStop();
-                context.threading().__engine_stop(EngineTokens.token());
-                safeDestroy();
-            } catch (Exception e) {
-                log.error("❗ Failed to stop application!");
-                throw new RuntimeException(e);
-            } finally {
-                running.set(false);
-            }
+            safeStop();
         }
     }
 
@@ -182,6 +175,20 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 }
                 try { stop(); } catch (Throwable ignored) {}
         }, LIFECYCLE_THREAD_NAME).start();
+    }
+
+    private void safeStop() {
+        try {
+            // Stop application
+            application.onStop();
+            context.threading().__engine_stop(EngineTokens.token());
+            safeDestroy();
+        } catch (Exception e) {
+            log.error("❗ Failed to stop application!");
+            throw new RuntimeException(e);
+        } finally {
+            running.set(false);
+        }
     }
 
     private void safeDestroy() {
