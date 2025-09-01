@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Set;
 
-@Slf4j
+@Slf4j(topic = "engine / AkjoEnginePropertyInitializer")
 public class AkjoEnginePropertyInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
     private static final String PROPERTY_SOURCE_FILTER = "optional:classpath:/";
 

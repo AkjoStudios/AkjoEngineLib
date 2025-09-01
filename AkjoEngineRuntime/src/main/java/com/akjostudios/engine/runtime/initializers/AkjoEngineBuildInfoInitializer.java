@@ -10,7 +10,7 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
 import java.io.IOException;
 import java.util.Properties;
 
-@Slf4j
+@Slf4j(topic = "engine / AkjoEngineBuildInfoInitializer")
 public class AkjoEngineBuildInfoInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
     private static final String BUILD_INFO_RESOURCE = "META-INF/build-info.properties";
 

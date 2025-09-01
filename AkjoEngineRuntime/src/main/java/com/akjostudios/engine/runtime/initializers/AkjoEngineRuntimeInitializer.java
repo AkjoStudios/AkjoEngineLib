@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
+@Slf4j(topic = "engine / AkjoEngineRuntimeInitializer")
 public class AkjoEngineRuntimeInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
     private static final String BASE_PACKAGE_PROPERTY = "engine.base-package";
 

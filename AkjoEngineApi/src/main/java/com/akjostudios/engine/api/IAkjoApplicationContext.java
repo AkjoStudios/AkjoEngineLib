@@ -15,7 +15,7 @@ public interface IAkjoApplicationContext {
     @NotNull Logger logger();
     @NotNull Logger logger(@NotNull String name);
     default @NotNull Logger logger(@NotNull Class<?> type) {
-        return logger(type.getName());
+        return logger(type.getSimpleName());
     }
 
     /**

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.ClassPathBeanDefinitionScanner;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.Environment;
 
-@Slf4j
+@Slf4j(topic = "engine / AkjoEnginePackageInitializer")
 public class AkjoEnginePackageInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
     private static final String BASE_PACKAGE_PROPERTY = "engine.base-package";
 

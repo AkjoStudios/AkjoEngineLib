@@ -24,7 +24,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     private static final String APP_NAME_PROPERTY = "spring.application.name";
     private static final String ENGINE_VERSION_PROPERTY = "engine.version";
 
-    private static final String LIFECYCLE_STOP_THREAD_NAME = "LifecycleStop";
+    private static final String LIFECYCLE_THREAD_NAME = "Lifecycle";
 
     private final IAkjoApplication application;
     private final AkjoApplicationContext context;
@@ -143,13 +143,13 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     stopLogger.info("ℹ️ Stopping application due to: {}", reason);
                 }
                 try { stop(); } catch (Throwable ignored) {}
-        }, LIFECYCLE_STOP_THREAD_NAME).start();
+        }, LIFECYCLE_THREAD_NAME).start();
     }
 
     private void safeDestroy() {
         if (shutdown.get()) { return; }
         try { application.onDestroy(); } catch (Exception ignored) {}
         shutdown.set(true);
-        log.info("💤 Application has been shut down gracefully. Goodbye!.");
+        log.info("💤 Application has been stopped and engine has shut down gracefully. Goodbye!");
     }
 }
