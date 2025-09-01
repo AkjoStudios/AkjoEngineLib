@@ -1,0 +1,1 @@
+./mwnv clean package -Papp && java -D"spring.profiles.active=app" -jar ./target/"$1"-exec.jar
