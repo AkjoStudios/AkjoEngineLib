@@ -114,6 +114,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     public void stop() {
         synchronized (lifecycleLock) {
             if (!running.get()) { return; }
+            Thread.currentThread().setName(LIFECYCLE_THREAD_NAME);
             try {
                 // Stop application
                 application.onStop();
