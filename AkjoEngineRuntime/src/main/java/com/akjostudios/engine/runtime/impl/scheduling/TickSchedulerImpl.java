@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BooleanSupplier;
 
 @RequiredArgsConstructor
 public final class TickSchedulerImpl implements TickScheduler {
@@ -35,7 +34,6 @@ public final class TickSchedulerImpl implements TickScheduler {
     private final AtomicLong tick = new AtomicLong(0);
 
     private final Mailbox logicMailbox;
-    private final BooleanSupplier threadCondition;
 
     @Override
     public @NotNull Cancellable everyTick(@NotNull Runnable task) {
@@ -55,10 +53,6 @@ public final class TickSchedulerImpl implements TickScheduler {
     public long currentTick() { return tick.get(); }
 
     public void onTick() {
-        if (!threadCondition.getAsBoolean()) {
-            throw new IllegalStateException("❗ Tick scheduler must be run on the logic thread! This is likely a bug in the engine - please report it using the issue tracker.");
-        }
-
         tick.incrementAndGet();
         for (Task task : tasks) {
             if (task.isCancelled()) { continue; }

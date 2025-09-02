@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BooleanSupplier;
 
 @RequiredArgsConstructor
 public final class FrameSchedulerImpl implements FrameScheduler {
@@ -37,7 +36,6 @@ public final class FrameSchedulerImpl implements FrameScheduler {
     private final AtomicLong frame = new AtomicLong(0);
 
     private final Mailbox mailbox;
-    private final BooleanSupplier threadCondition;
 
     @Override
     public @NotNull Cancellable everyFrame(@NotNull Runnable task) {
@@ -57,10 +55,6 @@ public final class FrameSchedulerImpl implements FrameScheduler {
     public long currentFrame() { return frame.get(); }
 
     public void onFrame() {
-        if (!threadCondition.getAsBoolean()) {
-            throw new IllegalStateException("❗ A frame scheduler must be run on a thread corresponding to a scheduler lane! This is likely a bug in the engine - please report it using the issue tracker.");
-        }
-
         frame.incrementAndGet();
         for (Task task : tasks) {
             if (task.isCancelled()) { continue; }

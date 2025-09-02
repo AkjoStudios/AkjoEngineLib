@@ -103,9 +103,9 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             );
 
             // Initialize scheduling system
-            FrameSchedulerImpl renderScheduler = new FrameSchedulerImpl(renderMailbox, () -> context.threading().isRenderThread());
-            TickSchedulerImpl logicScheduler = new TickSchedulerImpl(logicMailbox, () -> context.threading().isLogicThread());
-            FrameSchedulerImpl audioScheduler = new FrameSchedulerImpl(audioMailbox, () -> context.threading().isAudioThread());
+            FrameSchedulerImpl renderScheduler = new FrameSchedulerImpl(renderMailbox);
+            TickSchedulerImpl logicScheduler = new TickSchedulerImpl(logicMailbox);
+            FrameSchedulerImpl audioScheduler = new FrameSchedulerImpl(audioMailbox);
             context.__engine_setScheduler(
                     EngineTokens.token(),
                     new SchedulerImpl(

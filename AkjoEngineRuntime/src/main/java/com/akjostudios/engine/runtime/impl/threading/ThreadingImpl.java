@@ -312,6 +312,8 @@ public final class ThreadingImpl implements Threading {
                     renderWaiter.park(MAILBOX_EMPTY_PARK_TIME_NS);
                 }
             }
+        } catch (Exception e) {
+            log.error("⚠️ Render thread encountered an exception - shutting down rendering thread!");
         } finally {
             renderMailbox.shutdownAndDrainAll();
             IS_RENDER.remove();
@@ -353,6 +355,8 @@ public final class ThreadingImpl implements Threading {
                     Thread.onSpinWait();
                 }
             }
+        } catch (Exception e) {
+            log.error("⚠️ Logic thread encountered an exception - shutting down logic thread!");
         } finally {
             logicMailbox.shutdownAndDrainAll();
             IS_LOGIC.remove();
@@ -373,7 +377,9 @@ public final class ThreadingImpl implements Threading {
                     audioWaiter.park(MAILBOX_EMPTY_PARK_TIME_NS);
                 }
             }
-        } finally {
+        } catch (Exception e) {
+            log.error("⚠️ Audio thread encountered an exception - shutting down audio thread!");
+        }finally {
             audioMailbox.shutdownAndDrainAll();
             IS_AUDIO.remove();
         }
