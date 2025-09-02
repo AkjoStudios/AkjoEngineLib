@@ -17,10 +17,12 @@ public final class TickSchedulerImpl implements TickScheduler {
         private final Runnable runnable;
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
         private long remainingTicks;
+        private final boolean recurring;
 
-        Task(@NotNull Runnable runnable, long ticks) {
+        Task(@NotNull Runnable runnable, long ticks, boolean recurring) {
             this.runnable = runnable;
             this.remainingTicks = ticks;
+            this.recurring = recurring;
         }
 
         @Override
@@ -37,14 +39,14 @@ public final class TickSchedulerImpl implements TickScheduler {
 
     @Override
     public @NotNull Cancellable everyTick(@NotNull Runnable task) {
-        Task t = new Task(task, 1);
+        Task t = new Task(task, 1, true);
         tasks.add(t);
         return t;
     }
 
     @Override
     public @NotNull Cancellable afterTicks(int ticks, @NotNull Runnable task) {
-        Task t = new Task(task, Math.max(0, ticks));
+        Task t = new Task(task, Math.max(0, ticks), false);
         tasks.add(t);
         return t;
     }
@@ -56,15 +58,12 @@ public final class TickSchedulerImpl implements TickScheduler {
         tick.incrementAndGet();
         for (Task task : tasks) {
             if (task.isCancelled()) { continue; }
-            if (task.remainingTicks > 0) {
-                task.remainingTicks--;
-            }
+            if (task.remainingTicks > 0) { task.remainingTicks--; }
             if (task.remainingTicks == 0) {
                 logicMailbox.postOrThrow(() -> {
-                    if (!task.isCancelled()) {
-                        task.runnable.run();
-                    }
-                    task.cancel();
+                    if (!task.isCancelled()) { task.runnable.run(); }
+                    if (task.recurring) { task.remainingTicks = 1; }
+                    else { task.cancel(); }
                 });
             }
         }

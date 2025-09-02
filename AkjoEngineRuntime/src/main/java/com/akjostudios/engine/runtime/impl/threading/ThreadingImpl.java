@@ -32,6 +32,10 @@ public final class ThreadingImpl implements Threading {
     private static final long MAILBOX_EMPTY_PARK_TIME_NS = 1_000_000L;
     private static final int THREAD_JOIN_TIMEOUT_MS = 5000;
 
+    private static final long LOGIC_NANOS_PER_SECOND = 1_000_000_000L;
+    private static final int LOGIC_MAX_UPDATES = 5;
+    private static final int LOGIC_YIELD_DIVISOR = 2;
+
     private static final ThreadLocal<Boolean> IS_RENDER = ThreadLocal.withInitial(() -> false);
     private static final ThreadLocal<Boolean> IS_LOGIC = ThreadLocal.withInitial(() -> false);
     private static final ThreadLocal<Boolean> IS_AUDIO = ThreadLocal.withInitial(() -> false);
@@ -329,18 +333,27 @@ public final class ThreadingImpl implements Threading {
     private void logicLoop() {
         IS_LOGIC.set(true);
         try {
-            final long stepNanos = (long) (logicStepSeconds * 1_000_000_000L);
-            long prev = System.nanoTime();
-            long acc = 0L;
-            while (logicRunning.get()) {
+            final long stepNanos = (long) (logicStepSeconds * LOGIC_NANOS_PER_SECOND);
+            long lastTime = System.nanoTime();
+            long accumulator = 0L;
+            long maxAccumulator = stepNanos * LOGIC_MAX_UPDATES;
+
+            while (logicRunning.get() && !Thread.currentThread().isInterrupted()) {
                 logicMailbox.drain(MAILBOX_DRAIN_SIZE);
 
-                long now = System.nanoTime();
-                acc += now - prev;
-                prev = now;
+                long currentTime = System.nanoTime();
+                long frameTime = currentTime - lastTime;
+                lastTime = currentTime;
+
+                frameTime = Math.min(frameTime, stepNanos * LOGIC_MAX_UPDATES);
+                accumulator += frameTime;
+
+                accumulator = Math.min(accumulator, maxAccumulator);
 
                 boolean didUpdate = false;
-                while (acc >= stepNanos && logicRunning.get()) {
+                int updateCount = 0;
+
+                while (accumulator >= stepNanos && logicRunning.get() && updateCount < LOGIC_MAX_UPDATES) {
                     try {
                         if (logicCallback != null) {
                             logicCallback.onUpdate(logicStepSeconds);
@@ -348,15 +361,18 @@ public final class ThreadingImpl implements Threading {
                                 logicScheduler.onTick();
                             }
                             didUpdate = true;
+                            updateCount++;
                         }
                     } catch (Throwable t) {
                         handleUncaught(t);
                     }
-                    acc -= stepNanos;
+                    accumulator -= stepNanos;
                 }
 
                 if (!didUpdate && logicMailbox.isEmpty()) {
                     logicWaiter.park(MAILBOX_EMPTY_PARK_TIME_NS);
+                } else if (accumulator < stepNanos / LOGIC_YIELD_DIVISOR) {
+                    Thread.yield();
                 } else {
                     Thread.onSpinWait();
                 }
