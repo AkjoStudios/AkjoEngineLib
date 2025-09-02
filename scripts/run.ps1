@@ -17,5 +17,5 @@ if (-not (Test-Path -LiteralPath $JAR)) {
   exit 1
 }
 
-& java -D"spring.profiles.active=app" -jar $JAR
+& java -D"spring.profiles.active=app" -XX:+UseShenandoahGC -jar $JAR
 exit $LASTEXITCODE

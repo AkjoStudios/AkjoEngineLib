@@ -57,7 +57,7 @@ public final class ThreadingImpl implements Threading {
     // Logic thread
     private volatile Thread logicThread;
     private final AtomicBoolean logicRunning = new AtomicBoolean(false);
-    private double logicStepSeconds = 1.0 / 60.0;
+    private volatile double logicStepSeconds = 1.0 / 60.0;
     private volatile LogicCallback logicCallback;
 
     private final Waiter logicWaiter = new Waiter();
@@ -84,12 +84,18 @@ public final class ThreadingImpl implements Threading {
     @Override
     public void runOnWorker(@NotNull Runnable task) {
         ensureWorkers();
+        if (workerPool.isShutdown()) {
+            throw new IllegalStateException("❗ Worker pool has been shutdown! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
         workerPool.submit(task);
     }
 
     @Override
     public <T> @NotNull CompletableFuture<T> runOnWorker(@NotNull Callable<T> task) {
         ensureWorkers();
+        if (workerPool.isShutdown()) {
+            throw new IllegalStateException("❗ Worker pool has been shutdown! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
         return CompletableFuture.supplyAsync(() -> {
             try { return task.call(); } catch (Exception e) { throw new RuntimeException(e); }
         }, workerPool);
@@ -379,22 +385,36 @@ public final class ThreadingImpl implements Threading {
             }
         } catch (Exception e) {
             log.error("⚠️ Audio thread encountered an exception - shutting down audio thread!");
-        }finally {
+        } finally {
             audioMailbox.shutdownAndDrainAll();
             IS_AUDIO.remove();
         }
     }
 
     private void handleUncaught(Throwable t) {
-        if (exceptionHandler == null) { log.error(t, "❗ Uncaught exception in thread '{}':", Thread.currentThread().getName()); }
-        else { exceptionHandler.uncaughtException(Thread.currentThread(), t); }
+        try {
+            if (exceptionHandler == null) {
+                log.error(t, "❗ Uncaught exception in thread '{}':", Thread.currentThread().getName());
+            } else {
+                exceptionHandler.uncaughtException(Thread.currentThread(), t);
+            }
+        } catch (Throwable handlerException) {
+            System.err.println("Exception while handling uncaught exception in thread '" + Thread.currentThread().getName() + "':");
+            //noinspection CallToPrintStackTrace
+            t.printStackTrace();
+        }
     }
 
     private void join(@NotNull Thread thread) {
         try {
             thread.join(ThreadingImpl.THREAD_JOIN_TIMEOUT_MS);
             if (thread.isAlive()) {
-                log.warn("⚠️ Thread '{}' did not terminate in time - some tasks may not have been completed!", thread.getName());
+                log.warn("⚠️ Thread '{}' did not terminate in time - interrupting it", thread.getName());
+                thread.interrupt();
+                thread.join(ThreadingImpl.THREAD_JOIN_TIMEOUT_MS);
+                if (thread.isAlive()) {
+                    log.error("❗ Thread '{}' is still alive after interrupting it - possible resource leak!", thread.getName());
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

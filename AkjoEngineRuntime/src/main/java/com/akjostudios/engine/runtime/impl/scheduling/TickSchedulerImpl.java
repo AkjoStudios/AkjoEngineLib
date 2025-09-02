@@ -58,15 +58,13 @@ public final class TickSchedulerImpl implements TickScheduler {
             if (task.isCancelled()) { continue; }
             if (task.remainingTicks > 0) {
                 task.remainingTicks--;
-                if (task.remainingTicks == 0) {
-                    logicMailbox.postOrThrow(() -> {
-                        if (!task.isCancelled()) { task.runnable.run(); }
-                    });
-                    task.cancel();
-                }
-            } else {
+            }
+            if (task.remainingTicks == 0) {
                 logicMailbox.postOrThrow(() -> {
-                    if (!task.isCancelled()) { task.runnable.run(); }
+                    if (!task.isCancelled()) {
+                        task.runnable.run();
+                    }
+                    task.cancel();
                 });
             }
         }
