@@ -13,6 +13,7 @@ import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.SchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.TickSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.threading.ThreadingImpl;
+import com.akjostudios.engine.runtime.impl.time.TimeImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.SmartLifecycle;
 
@@ -79,13 +80,17 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 );
             }
 
+            // Initialize time system
+            TimeImpl time = new TimeImpl();
+            context.__engine_setTime(EngineTokens.token(), time);
+
             // Initialize threading system
             Mailbox renderMailbox = new Mailbox(RENDER_THREAD_NAME, context.logger(RENDER_THREAD_NAME));
             Mailbox logicMailbox = new Mailbox(LOGIC_THREAD_NAME, context.logger(LOGIC_THREAD_NAME));
             Mailbox audioMailbox = new Mailbox(AUDIO_THREAD_NAME, context.logger(AUDIO_THREAD_NAME));
             context.__engine_setThreading(
                     EngineTokens.token(),
-                    new ThreadingImpl(renderMailbox, logicMailbox, audioMailbox)
+                    new ThreadingImpl(time, renderMailbox, logicMailbox, audioMailbox)
             );
             context.threading().__engine_init(
                     EngineTokens.token(),

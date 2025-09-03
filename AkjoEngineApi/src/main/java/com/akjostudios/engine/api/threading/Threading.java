@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
-@SuppressWarnings({"unused", "RedundantThrows"})
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public interface Threading {
     /**
      * Runs the given task on a worker thread without a return object.

@@ -13,8 +13,8 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true, fluent = true)
 public class AkjoEngineAppProperties {
     @JsonProperty(value = "appName")
-    private String appName;
+    private String appName = "Untitled App";
 
     @JsonProperty(value = "appVersion")
-    private String appVersion;
+    private String appVersion = "1.0.0";
 }

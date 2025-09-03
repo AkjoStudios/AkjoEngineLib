@@ -3,7 +3,7 @@ package com.akjostudios.engine.api.scheduling;
 import com.akjostudios.engine.api.common.cancel.Cancellable;
 import org.jetbrains.annotations.NotNull;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public interface FrameScheduler {
     /**
      * Runs the given task on every frame of this scheduler.

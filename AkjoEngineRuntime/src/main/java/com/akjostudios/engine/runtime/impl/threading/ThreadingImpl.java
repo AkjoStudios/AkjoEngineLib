@@ -9,6 +9,7 @@ import com.akjostudios.engine.api.scheduling.TickScheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.TickSchedulerImpl;
+import com.akjostudios.engine.runtime.impl.time.TimeImpl;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +18,8 @@ import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.akjostudios.engine.runtime.impl.time.TimeImpl.NANOS_PER_SECOND;
 
 @RequiredArgsConstructor
 public final class ThreadingImpl implements Threading {
@@ -32,7 +35,8 @@ public final class ThreadingImpl implements Threading {
     private static final long MAILBOX_EMPTY_PARK_TIME_NS = 1_000_000L;
     private static final int THREAD_JOIN_TIMEOUT_MS = 5000;
 
-    private static final long LOGIC_NANOS_PER_SECOND = 1_000_000_000L;
+    private static final double LARGE_DELTA_TIME_THRESHOLD = 0.25;
+
     private static final int LOGIC_MAX_UPDATES = 5;
     private static final int LOGIC_YIELD_DIVISOR = 2;
 
@@ -43,6 +47,8 @@ public final class ThreadingImpl implements Threading {
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean stopping = new AtomicBoolean(false);
+
+    private final TimeImpl time;
 
     private Logger log;
 
@@ -61,7 +67,7 @@ public final class ThreadingImpl implements Threading {
     // Logic thread
     private volatile Thread logicThread;
     private final AtomicBoolean logicRunning = new AtomicBoolean(false);
-    private volatile double logicStepSeconds = 1.0 / 60.0;
+    private volatile double logicStepSeconds;
     private volatile LogicCallback logicCallback;
 
     private final Waiter logicWaiter = new Waiter();
@@ -311,8 +317,15 @@ public final class ThreadingImpl implements Threading {
     private void renderLoop() {
         IS_RENDER.set(true);
         try {
+            long lastTime = time.nowNanos();
             while (renderRunning.get()) {
                 renderMailbox.drain(MAILBOX_DRAIN_SIZE);
+
+                long currentTime = time.nowNanos();
+                double deltaTime = (currentTime - lastTime) / NANOS_PER_SECOND;
+                deltaTime = Math.clamp(deltaTime, 0.0, LARGE_DELTA_TIME_THRESHOLD);
+                time.publishRender(currentTime, deltaTime);
+                lastTime = currentTime;
 
                 if (renderScheduler != null) {
                     renderScheduler.onFrame();
@@ -333,7 +346,7 @@ public final class ThreadingImpl implements Threading {
     private void logicLoop() {
         IS_LOGIC.set(true);
         try {
-            final long stepNanos = (long) (logicStepSeconds * LOGIC_NANOS_PER_SECOND);
+            final long stepNanos = (long) (logicStepSeconds * NANOS_PER_SECOND);
             long lastTime = System.nanoTime();
             long accumulator = 0L;
             long maxAccumulator = stepNanos * LOGIC_MAX_UPDATES;
@@ -356,6 +369,7 @@ public final class ThreadingImpl implements Threading {
                 while (accumulator >= stepNanos && logicRunning.get() && updateCount < LOGIC_MAX_UPDATES) {
                     try {
                         if (logicCallback != null) {
+                            time.publishLogic(currentTime, logicStepSeconds);
                             logicCallback.onUpdate(logicStepSeconds);
                             if (logicScheduler != null) {
                                 logicScheduler.onTick();
@@ -388,8 +402,15 @@ public final class ThreadingImpl implements Threading {
     private void audioLoop() {
         IS_AUDIO.set(true);
         try {
+            long lastTime = time.nowNanos();
             while (audioRunning.get()) {
                 audioMailbox.drain(MAILBOX_DRAIN_SIZE);
+
+                long currentTime = time.nowNanos();
+                double deltaTime = (currentTime - lastTime) / NANOS_PER_SECOND;
+                deltaTime = Math.clamp(deltaTime, 0.0, LARGE_DELTA_TIME_THRESHOLD);
+                time.publishAudio(currentTime, deltaTime);
+                lastTime = currentTime;
 
                 if (audioScheduler != null) {
                     audioScheduler.onFrame();

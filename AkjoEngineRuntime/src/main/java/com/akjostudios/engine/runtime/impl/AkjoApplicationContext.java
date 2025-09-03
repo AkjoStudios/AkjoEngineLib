@@ -6,6 +6,7 @@ import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
+import com.akjostudios.engine.api.time.Time;
 import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +25,7 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private Lifecycle lifecycle;
     private Threading threading;
     private Scheduler scheduler;
+    private Time time;
 
     @Override
     public @NotNull Logger logger() {
@@ -62,6 +64,14 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Scheduler object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         return scheduler;
+    }
+
+    @Override
+    public @NotNull Time time() {
+        if (time == null) {
+            throw new IllegalStateException("❗ Time object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return time;
     }
 
     /**
@@ -116,5 +126,23 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Scheduler object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         this.scheduler = scheduler;
+    }
+
+    /**
+     * Sets the internal time object for this application.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setTime(
+            @NotNull Object token,
+            @NotNull Time time
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), DEFAULT_MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Scheduler object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.time = time;
     }
 }
