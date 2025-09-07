@@ -12,4 +12,5 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.threading;
     exports com.akjostudios.engine.api.scheduling;
     exports com.akjostudios.engine.api.time;
+    exports com.akjostudios.engine.api.event;
 }

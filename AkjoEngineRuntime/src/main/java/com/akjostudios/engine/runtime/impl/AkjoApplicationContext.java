@@ -1,6 +1,7 @@
 package com.akjostudios.engine.runtime.impl;
 
 import com.akjostudios.engine.api.IAkjoApplicationContext;
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
@@ -26,6 +27,7 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private Threading threading;
     private Scheduler scheduler;
     private Time time;
+    private EventBus events;
 
     @Override
     public @NotNull Logger logger() {
@@ -72,6 +74,14 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Time object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         return time;
+    }
+
+    @Override
+    public @NotNull EventBus events() {
+        if (events == null) {
+            throw new IllegalStateException("❗ Event bus object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return events;
     }
 
     /**
@@ -144,5 +154,23 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Scheduler object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         this.time = time;
+    }
+
+    /**
+     * Sets the internal event bus for this application
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setEventBus(
+            @NotNull Object token,
+            @NotNull EventBus events
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Event bus object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.events = events;
     }
 }
