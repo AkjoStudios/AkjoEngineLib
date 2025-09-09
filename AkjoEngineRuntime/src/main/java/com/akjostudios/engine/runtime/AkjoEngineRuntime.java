@@ -8,6 +8,7 @@ import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
+import com.akjostudios.engine.runtime.impl.event.EventBusImpl;
 import com.akjostudios.engine.runtime.impl.lifecycle.LifecycleImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.SchedulerImpl;
@@ -31,6 +32,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     private static final String RUNTIME_LOGGER_NAME = "engine.runtime";
     private static final String CRASH_LOGGER_NAME = "engine.crash";
     private static final String THREADING_LOGGER_NAME = "engine.threading";
+    private static final String EVENT_LOGGER_NAME = "engine.event";
 
     private static final String APP_NAME_PROPERTY = "spring.application.name";
     private static final String ENGINE_VERSION_PROPERTY = "engine.version";
@@ -126,6 +128,16 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             context.threading().__engine_setRenderScheduler(EngineTokens.token(), renderScheduler);
             context.threading().__engine_setLogicScheduler(EngineTokens.token(), logicScheduler);
             context.threading().__engine_setAudioScheduler(EngineTokens.token(), audioScheduler);
+
+            // Initialize event system
+            context.__engine_setEventBus(
+                    EngineTokens.token(),
+                    new EventBusImpl(
+                            context.threading(),
+                            context.scheduler(),
+                            context.logger(EVENT_LOGGER_NAME)
+                    )
+            );
 
             // Initialize application
             application.onInit();

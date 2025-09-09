@@ -26,11 +26,10 @@ public final class EventBusImpl implements EventBus {
     @Override
     public <T extends Event> EventSubscription subscribe(
             @NotNull Class<T> type,
-            @NotNull EventLane lane,
             @NotNull EventListener<T> listener
     ) {
         ListenerList<T> list = getOrCreate(type);
-        Subscription<T> subscription = new Subscription<>(type, lane, listener, list);
+        Subscription<T> subscription = new Subscription<>(type, listener, list);
         list.subscriptions.add(subscription);
         return subscription;
     }
@@ -55,6 +54,9 @@ public final class EventBusImpl implements EventBus {
     @Override
     public <T extends Event> void publishImmediate(@NotNull T event) { dispatch(event); }
 
+    /**
+     * Sets the given lane as the default lane for the given event type.
+     */
     public void setDefaultLane(@NotNull Class<? extends Event> type, @NotNull EventLane lane) {
         defaultLanes.put(type, lane);
     }
@@ -88,7 +90,6 @@ public final class EventBusImpl implements EventBus {
     @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
     private static final class Subscription<T extends Event> implements EventSubscription {
         private final Class<T> type;
-        private final EventLane lane;
         private final EventListener<T> listener;
         private final ListenerList<T> owner;
         private final AtomicBoolean active = new AtomicBoolean(true);
