@@ -7,6 +7,7 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api;
     exports com.akjostudios.engine.api.common;
     exports com.akjostudios.engine.api.common.cancel;
+    exports com.akjostudios.engine.api.context;
     exports com.akjostudios.engine.api.logging;
     exports com.akjostudios.engine.api.lifecycle;
     exports com.akjostudios.engine.api.threading;

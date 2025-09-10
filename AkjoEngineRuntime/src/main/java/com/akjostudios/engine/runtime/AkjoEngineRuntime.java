@@ -6,6 +6,7 @@ import com.akjostudios.engine.api.common.Mailbox;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.threading.Threading;
+import com.akjostudios.engine.runtime.components.EventListenerRegistrar;
 import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
 import com.akjostudios.engine.runtime.impl.event.EventBusImpl;
@@ -18,14 +19,14 @@ import com.akjostudios.engine.runtime.impl.time.TimeImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.SmartLifecycle;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
-import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER_THREAD_NAME;
-import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.LOGIC_THREAD_NAME;
-import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.AUDIO_THREAD_NAME;
+import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.*;
 
 @RequiredArgsConstructor
 public class AkjoEngineRuntime implements SmartLifecycle {
@@ -43,6 +44,8 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     private final AkjoApplicationContext context;
     private final AkjoEngineAppProperties properties;
     private final Map<String, Object> systemProperties;
+
+    private final List<EventListenerRegistrar.Registration> eventListenerRegistrations;
 
     private Logger log;
 
@@ -138,6 +141,16 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                             context.logger(EVENT_LOGGER_NAME)
                     )
             );
+            eventListenerRegistrations.forEach(registration -> context.events().subscribe(
+                    registration.eventType(),
+                    event -> {
+                        try {
+                            registration.method().invoke(registration.bean(), event);
+                        } catch (InvocationTargetException | IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+            ));
 
             // Initialize application
             application.onInit();

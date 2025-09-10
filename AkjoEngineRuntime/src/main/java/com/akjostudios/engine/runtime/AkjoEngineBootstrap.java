@@ -1,7 +1,7 @@
 package com.akjostudios.engine.runtime;
 
 import com.akjostudios.engine.runtime.initializers.AkjoEngineBuildInfoInitializer;
-import com.akjostudios.engine.runtime.initializers.AkjoEnginePackageInitializer;
+import com.akjostudios.engine.runtime.initializers.AkjoEngineComponentInitializer;
 import com.akjostudios.engine.runtime.initializers.AkjoEnginePropertyInitializer;
 import com.akjostudios.engine.runtime.initializers.AkjoEngineRuntimeInitializer;
 import com.akjostudios.engine.runtime.util.DateTimeFormatUtil;
@@ -36,8 +36,8 @@ public class AkjoEngineBootstrap {
     public static void main(String[] args) {
         new SpringApplicationBuilder(AkjoEngineConfig.class).initializers(
                 new AkjoEnginePropertyInitializer(),
-                new AkjoEnginePackageInitializer(),
                 new AkjoEngineBuildInfoInitializer(),
+                new AkjoEngineComponentInitializer(),
                 new AkjoEngineRuntimeInitializer()
         ).properties(DEFAULT_PROPS).run(args);
     }

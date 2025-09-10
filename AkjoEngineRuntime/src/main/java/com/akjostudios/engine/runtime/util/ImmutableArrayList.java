@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings({"unused", "UnusedReturnValue", "SameReturnValue"})
 public final class ImmutableArrayList<T> {
     private static final Object[] EMPTY = new Object[0];
     private final AtomicReference<Object[]> ref = new AtomicReference<>(EMPTY);
