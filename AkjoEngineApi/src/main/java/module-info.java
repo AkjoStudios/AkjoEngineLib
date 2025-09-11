@@ -14,4 +14,5 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.scheduling;
     exports com.akjostudios.engine.api.time;
     exports com.akjostudios.engine.api.event;
+    exports com.akjostudios.engine.api.resource.file;
 }

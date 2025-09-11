@@ -47,5 +47,9 @@ public class EventListenerRegistrar implements DestructionAwareBeanPostProcessor
     @Override
     public void postProcessBeforeDestruction(@NotNull Object bean, @NotNull String beanName) throws BeansException {}
 
-    public record Registration(@NotNull Class<? extends Event> eventType, @NotNull Object bean, @NotNull Method method) {}
+    public record Registration(
+            @NotNull Class<? extends Event> eventType,
+            @NotNull Object bean,
+            @NotNull Method method
+    ) {}
 }

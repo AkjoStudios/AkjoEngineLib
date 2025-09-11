@@ -11,6 +11,8 @@ import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
 import com.akjostudios.engine.runtime.impl.event.EventBusImpl;
 import com.akjostudios.engine.runtime.impl.lifecycle.LifecycleImpl;
+import com.akjostudios.engine.runtime.impl.resource.file.ClasspathFileSystem;
+import com.akjostudios.engine.runtime.impl.resource.file.RouterFileSystem;
 import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.SchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.TickSchedulerImpl;
@@ -151,6 +153,16 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                         }
                     }
             ));
+
+            // Initialize resource system
+            context.__engine_setFileSystem(
+                    EngineTokens.token(),
+                    new RouterFileSystem()
+            );
+            context.fs().mount("assets", new ClasspathFileSystem(
+                    application.getClass().getClassLoader(),
+                    "assets"
+            ), "/");
 
             // Initialize application
             application.onInit();

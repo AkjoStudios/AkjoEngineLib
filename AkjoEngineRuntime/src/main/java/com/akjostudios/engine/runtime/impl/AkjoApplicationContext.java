@@ -5,6 +5,7 @@ import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
+import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.time.Time;
@@ -28,6 +29,7 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private Scheduler scheduler;
     private Time time;
     private EventBus events;
+    private MountableFileSystem fs;
 
     @Override
     public @NotNull Logger logger() {
@@ -82,6 +84,14 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Event bus object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         return events;
+    }
+
+    @Override
+    public @NotNull MountableFileSystem fs() {
+        if (fs == null) {
+            throw new IllegalStateException("❗ File system object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return fs;
     }
 
     /**
@@ -172,5 +182,23 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Event bus object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         this.events = events;
+    }
+
+    /**
+     * Sets the internal router file system for this application
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setFileSystem(
+            @NotNull Object token,
+            @NotNull MountableFileSystem fs
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ File system object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.fs = fs;
     }
 }

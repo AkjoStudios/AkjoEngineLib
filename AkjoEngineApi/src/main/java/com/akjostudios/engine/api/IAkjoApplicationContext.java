@@ -3,6 +3,7 @@ package com.akjostudios.engine.api;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
+import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.time.Time;
@@ -16,6 +17,7 @@ public interface IAkjoApplicationContext {
     @NotNull Scheduler scheduler();
     @NotNull Time time();
     @NotNull EventBus events();
+    @NotNull MountableFileSystem fs();
 
     // Logging
     @NotNull Logger logger();
@@ -77,5 +79,16 @@ public interface IAkjoApplicationContext {
     void __engine_setEventBus(
             @NotNull Object token,
             @NotNull EventBus events
+    ) throws IllegalCallerException, IllegalStateException;
+
+    /**
+     * Sets the internal router file system for this application
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    void __engine_setFileSystem(
+            @NotNull Object token,
+            @NotNull MountableFileSystem fs
     ) throws IllegalCallerException, IllegalStateException;
 }
