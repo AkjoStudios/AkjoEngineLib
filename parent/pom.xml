@@ -22,16 +22,144 @@
         <jetbrains.annotations.version>26.0.2</jetbrains.annotations.version>
 
         <maven.compiler.version>3.14.0</maven.compiler.version>
-
-        <lwjgl.natives>natives-windows</lwjgl.natives>
     </properties>
 
     <profiles>
         <profile>
-            <id>app</id>
+            <id>app-build</id>
             <properties>
                 <engine.version>${project.parent.version}</engine.version>
                 <build.name>${project.artifactId}</build.name>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>platform-windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-windows</lwjgl.natives>
+            </properties>
+        </profile>
+        <profile>
+            <id>platform-windows-x86</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                    <arch>x86</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-windows-x86</lwjgl.natives>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>platform-macos</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-macos</lwjgl.natives>
+            </properties>
+        </profile>
+        <profile>
+            <id>platform-macos-arm64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-macos-arm64</lwjgl.natives>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>platform-linux</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>linux</name>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-linux</lwjgl.natives>
+            </properties>
+        </profile>
+        <profile>
+            <id>platform-linux-arm64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>linux</name>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-linux-arm64</lwjgl.natives>
+            </properties>
+        </profile>
+        <profile>
+            <id>platform-linux-arm32</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>linux</name>
+                    <arch>arm</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-linux-arm32</lwjgl.natives>
+            </properties>
+        </profile>
+        <profile>
+            <id>platform-linux-ppc64le</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>linux</name>
+                    <arch>ppc64le</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-linux-ppc64le</lwjgl.natives>
+            </properties>
+        </profile>
+        <profile>
+            <id>platform-linux-riscv64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>linux</name>
+                    <arch>riscv64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-linux-riscv64</lwjgl.natives>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>platform-freebsd</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>freebsd</name>
+                    <arch>amd64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-freebsd</lwjgl.natives>
             </properties>
         </profile>
     </profiles>

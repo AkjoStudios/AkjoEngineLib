@@ -1,1 +1,1 @@
-./mwnv clean package -Papp && java -D"spring.profiles.active=app" -jar ./target/"$1"-exec.jar
+./mwnv clean package -Papp-build,platform-"$2" && java -D"spring.profiles.active=app-build,platform-$2" -jar ./target/"$1"-exec.jar

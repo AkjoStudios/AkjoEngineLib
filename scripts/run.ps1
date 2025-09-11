@@ -1,12 +1,16 @@
 param(
   [Parameter(Mandatory = $true, Position = 0)]
-  [string]$Name
+  [string]$Name,
+  [Parameter(Mandatory = $true, Position = 1)]
+  [string]$Platform
 )
 
 $ErrorActionPreference = 'Stop'
 $OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
 
-& ./mvnw.cmd clean package -Papp
+$platformProfile = "platform-$Platform"
+
+& ./mvnw.cmd 'clean' 'package' "-P=app-build,$platformProfile"
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
 }
@@ -17,5 +21,5 @@ if (-not (Test-Path -LiteralPath $JAR)) {
   exit 1
 }
 
-& java -D"spring.profiles.active=app" -XX:+UseShenandoahGC -jar $JAR
+& java "-Dspring.profiles.active=app-build,$platformProfile" '-XX:+UseShenandoahGC' '-jar' "$JAR"
 exit $LASTEXITCODE
