@@ -6,15 +6,19 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @RequiredArgsConstructor
 @Accessors(fluent = true, chain = true)
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "BooleanMethodIsAlwaysInverted"})
 public final class Mailbox {
     private static final int BATCH_SIZE = 1024;
 
@@ -50,6 +54,66 @@ public final class Mailbox {
         if (!post(runnable)) {
             throw new IllegalStateException("Mailbox '" + name + "' is not accepting further tasks! Missing '" + runnable.getClass().getSimpleName() + "'...");
         }
+    }
+
+    public void postBlocking(@NotNull Runnable task) {
+        CompletableFuture<Void> done = new CompletableFuture<>();
+        if (!post(() -> {
+            try {
+                task.run();
+                done.complete(null);
+            } catch (Throwable t) {
+                done.completeExceptionally(t);
+            }
+        })) {
+            throw new IllegalStateException("Mailbox '" + name + "' is not accepting further tasks! Missing '" + task.getClass().getSimpleName() + "'...");
+        }
+        try {
+            done.join();
+        } catch (Throwable t) {
+            Throwable cause = (t.getCause() != null) ? t.getCause() : t;
+            switch (cause) {
+                case RuntimeException re -> throw re;
+                case Error e -> throw e;
+                default -> throw new RuntimeException(cause);
+            }
+        }
+    }
+
+    public <T> T postSupplierBlocking(@NotNull Supplier<T> supplier) {
+        CompletableFuture<T> done = new CompletableFuture<>();
+        if (!post(() -> {
+            try {
+                done.complete(supplier.get());
+            } catch (Throwable t) {
+                done.completeExceptionally(t);
+            }
+        })) {
+            throw new IllegalStateException("Mailbox '" + name + "' is not accepting further tasks! Missing '" + supplier.getClass().getSimpleName() + "'...");
+        }
+        return done.join();
+    }
+
+    public void postAll(@NotNull Runnable... runnables) {
+        Arrays.stream(runnables).forEach(this::postOrThrow);
+    }
+
+    public void postAll(@NotNull Iterable<Runnable> runnables) {
+        runnables.forEach(this::postOrThrow);
+    }
+
+    public void postAllBlocking(@NotNull Runnable... runnables) {
+        Arrays.stream(runnables).forEach(this::postBlocking);
+    }
+
+    public void postAllBlocking(@NotNull Iterable<Runnable> runnables) {
+        runnables.forEach(this::postBlocking);
+    }
+
+    public <T> @NotNull Iterable<T> postAllSuppliersBlocking(@NotNull Iterable<Supplier<T>> suppliers) {
+        ArrayList<T> results = new ArrayList<>();
+        suppliers.forEach(supplier -> results.add(postSupplierBlocking(supplier)));
+        return results;
     }
 
     public void drain() {
