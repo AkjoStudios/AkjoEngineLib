@@ -28,6 +28,7 @@ public final class AkjoEngineExceptionHandler implements Thread.UncaughtExceptio
             System.err.println(report);
         }
 
+        if (throwable instanceof RuntimeException) { return; }
         safeShutdown(thread);
     }
 
