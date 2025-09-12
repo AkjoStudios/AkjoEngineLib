@@ -434,7 +434,7 @@ public final class ThreadingImpl implements Threading {
         }
     }
 
-    private void handleUncaught(Throwable t) {
+    public void handleUncaught(Throwable t) {
         try {
             if (exceptionHandler == null) {
                 log.error(t, "❗ Uncaught exception in thread '{}':", Thread.currentThread().getName());

@@ -106,10 +106,10 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             Mailbox renderMailbox = new Mailbox(RENDER_THREAD_NAME, context.logger(RENDER_THREAD_NAME));
             Mailbox logicMailbox = new Mailbox(LOGIC_THREAD_NAME, context.logger(LOGIC_THREAD_NAME));
             Mailbox audioMailbox = new Mailbox(AUDIO_THREAD_NAME, context.logger(AUDIO_THREAD_NAME));
-            context.__engine_setThreading(
-                    EngineTokens.token(),
-                    new ThreadingImpl(time, renderMailbox, logicMailbox, audioMailbox)
-            );
+
+            ThreadingImpl threading = new ThreadingImpl(time, renderMailbox, logicMailbox, audioMailbox);
+            context.__engine_setThreading(EngineTokens.token(), threading);
+
             context.threading().__engine_init(
                     EngineTokens.token(),
                     new AkjoEngineExceptionHandler(
@@ -129,6 +129,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             FrameSchedulerImpl renderScheduler = new FrameSchedulerImpl(renderMailbox);
             TickSchedulerImpl logicScheduler = new TickSchedulerImpl(logicMailbox);
             FrameSchedulerImpl audioScheduler = new FrameSchedulerImpl(audioMailbox);
+
             context.__engine_setScheduler(
                     EngineTokens.token(),
                     new SchedulerImpl(
@@ -141,6 +142,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                             renderScheduler, logicScheduler, audioScheduler
                     )
             );
+
             context.threading().__engine_setRenderScheduler(EngineTokens.token(), renderScheduler);
             context.threading().__engine_setLogicScheduler(EngineTokens.token(), logicScheduler);
             context.threading().__engine_setAudioScheduler(EngineTokens.token(), audioScheduler);
@@ -149,11 +151,12 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             context.__engine_setEventBus(
                     EngineTokens.token(),
                     new EventBusImpl(
-                            context.threading(),
+                            threading,
                             context.scheduler(),
                             context.logger(EVENT_LOGGER_NAME)
                     )
             );
+
             eventListenerRegistrations.forEach(registration -> context.events().subscribe(
                     registration.eventType(),
                     event -> {
@@ -170,6 +173,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     EngineTokens.token(),
                     new RouterFileSystem()
             );
+
             context.fs().mount(ASSETS_PATH, new ClasspathFileSystem(
                     application.getClass().getClassLoader(),
                     ASSETS_PATH

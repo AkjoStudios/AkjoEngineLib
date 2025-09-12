@@ -79,7 +79,7 @@ public final class RouterFileSystem implements MountableFileSystem {
     }
 
     private @NotNull Mount resolveMount(@NotNull ResourcePath path) throws IllegalArgumentException {
-        String pathStr = path.path();
+        String pathStr = path.path().startsWith("/") ? path.path().substring(1) : path.path();
         int slash = pathStr.indexOf('/');
         String alias = slash == -1 ? pathStr : pathStr.substring(0, slash);
         Mount mount = mounts.get(alias);
@@ -107,7 +107,7 @@ public final class RouterFileSystem implements MountableFileSystem {
             }
 
             private @NotNull ResourcePath resolve(@NotNull ResourcePath path) {
-                String actualPath = path.path();
+                String actualPath = path.path().startsWith("/") ? path.path().substring(1) : path.path();
                 String relativePath = actualPath.startsWith(alias + "/") ? actualPath.substring(alias.length() + 1) : actualPath;
                 String joined = root.isEmpty() ? relativePath : (root + "/" + relativePath);
                 return new ResourcePath(path.scheme(), joined);
