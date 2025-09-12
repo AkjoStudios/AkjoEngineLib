@@ -16,4 +16,9 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.time;
     exports com.akjostudios.engine.api.event;
     exports com.akjostudios.engine.api.resource.file;
+    exports com.akjostudios.engine.api.monitor;
+    exports com.akjostudios.engine.api.common.base.position;
+    exports com.akjostudios.engine.api.common.base.resolution;
+    exports com.akjostudios.engine.api.common.base.scale;
+    exports com.akjostudios.engine.api.common.base.size;
 }
