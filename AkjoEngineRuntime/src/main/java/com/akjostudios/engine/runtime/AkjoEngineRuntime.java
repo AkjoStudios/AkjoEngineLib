@@ -42,6 +42,10 @@ public class AkjoEngineRuntime implements SmartLifecycle {
 
     private static final String LIFECYCLE_THREAD_NAME = "Lifecycle";
 
+    private static final String ASSETS_PATH = "assets";
+
+    private static final String ROOT_BASE_PATH = "/";
+
     private final IAkjoApplication application;
     private final AkjoApplicationContext context;
     private final AkjoEngineAppProperties properties;
@@ -159,10 +163,10 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     EngineTokens.token(),
                     new RouterFileSystem()
             );
-            context.fs().mount("assets", new ClasspathFileSystem(
+            context.fs().mount(ASSETS_PATH, new ClasspathFileSystem(
                     application.getClass().getClassLoader(),
-                    "assets"
-            ), "/");
+                    ASSETS_PATH
+            ), ROOT_BASE_PATH);
 
             // Initialize application
             application.onInit();
