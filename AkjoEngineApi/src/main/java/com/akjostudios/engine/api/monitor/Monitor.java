@@ -28,6 +28,10 @@ public interface Monitor extends HasName, HasPosition2D, HasResolution, HasSize2
      */
     @NotNull MonitorResolution resolution();
     /**
+     * @return The refresh rate of this monitor.
+     */
+    int refreshRate();
+    /**
      * @apiNote Might not be accurate depending on the monitor (because of incorrect EDID data or an inaccurate driver implementation).
      * @return The physical size of this monitor.
      */

@@ -1,6 +1,12 @@
 package com.akjostudios.engine.api.monitor;
 
 import com.akjostudios.engine.api.common.base.position.IPosition2D;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public record ScreenPosition(long x, long y) implements IPosition2D {}
+public record ScreenPosition(long x, long y) implements IPosition2D {
+    @Override
+    public @NotNull String toString() {
+        return "ScreenPosition(" + x + ", " + y + ")";
+    }
+}

@@ -72,5 +72,5 @@ public record MonitorResolution(int width, int height) implements IResolution {
     public static MonitorResolution WQSXGA = new MonitorResolution(3200, 2048);
 
     @Override
-    public @NotNull String toString() { return width + "x" + height; }
+    public @NotNull String toString() { return "MonitorResolution(" + width + "x" + height + ")"; }
 }

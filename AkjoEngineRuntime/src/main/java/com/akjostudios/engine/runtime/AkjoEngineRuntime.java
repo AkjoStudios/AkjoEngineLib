@@ -191,12 +191,13 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     }
             );
 
-            // Initialize GLFW
+            // Prepare everything blocking on render thread
             renderMailbox.postBlocking(() -> {
                 if (!context.threading().isRenderThread()) {
                     throw new IllegalStateException("❗ GLFW must be initialized on render thread! This is likely a bug in the engine - please report it using the issue tracker.");
                 }
 
+                // Initialize GLFW
                 glfwErrorCallback.set(GLFWErrorCallback.create((code, message) -> log.error(
                         "GLFW Error ({}): {}",
                         code, GLFWErrorCallback.getDescription(code)
@@ -206,7 +207,9 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 if (!GLFW.glfwInit()) {
                     throw new IllegalStateException("❗ GLFW failed to initialize! Check if this build supports your system, otherwise this is likely a bug in the engine - please report it using the issue tracker.");
                 }
-                log.info("ℹ️ GLFW has been initialized and is ready to use.");
+
+                // Initialize monitor registry
+                context.monitors().__engine_init(EngineTokens.token());
             });
 
             // Start application
@@ -254,17 +257,20 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             context.threading().__engine_stop(
                     EngineTokens.token(),
                     () -> {
+                        // Stop monitor registry
+                        context.monitors().__engine_stop(EngineTokens.token());
+
+                        // Terminate GLFW
                         GLFW.glfwTerminate();
                         glfwErrorCallback.get().free();
                         glfwErrorCallback.set(null);
-                        log.info("ℹ️ GLFW has been terminated.");
                     },
                     FunctionalUtil.doNothing(),
                     FunctionalUtil.doNothing()
             );
             safeDestroy();
         } catch (Exception e) {
-            log.error("❗ Failed to stop application!");
+            log.error("❗ Failed to stop application!", e);
             throw new RuntimeException(e);
         } finally {
             running.set(false);

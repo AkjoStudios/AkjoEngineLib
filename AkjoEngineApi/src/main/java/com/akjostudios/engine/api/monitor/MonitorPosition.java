@@ -71,4 +71,9 @@ public record MonitorPosition(@NotNull Monitor monitor, long x, long y) implemen
                 monitor.resolution().height() - object.height()
         );
     }
+
+    @Override
+    public @NotNull String toString() {
+        return "MonitorPosition(" + x + ", " + y + ")";
+    }
 }

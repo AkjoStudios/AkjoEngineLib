@@ -5,11 +5,13 @@ import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
+import com.akjostudios.engine.api.monitor.MonitorRegistry;
 import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.time.Time;
 import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
+import com.akjostudios.engine.runtime.impl.monitor.MonitorRegistryImpl;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +32,8 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private Time time;
     private EventBus events;
     private MountableFileSystem fs;
+
+    private final MonitorRegistry monitors = new MonitorRegistryImpl();
 
     @Override
     public @NotNull Logger logger() {
@@ -93,6 +97,9 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
         }
         return fs;
     }
+
+    @Override
+    public @NotNull MonitorRegistry monitors() { return monitors; }
 
     /**
      * Sets the internal lifecycle object for this application.

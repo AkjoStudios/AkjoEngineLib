@@ -3,6 +3,7 @@ package com.akjostudios.engine.api;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
+import com.akjostudios.engine.api.monitor.MonitorRegistry;
 import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
@@ -18,6 +19,7 @@ public interface IAkjoApplicationContext {
     @NotNull Time time();
     @NotNull EventBus events();
     @NotNull MountableFileSystem fs();
+    @NotNull MonitorRegistry monitors();
 
     // Logging
     @NotNull Logger logger();
