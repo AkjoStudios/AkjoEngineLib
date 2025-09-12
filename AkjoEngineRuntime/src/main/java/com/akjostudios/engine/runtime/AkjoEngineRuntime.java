@@ -221,8 +221,11 @@ public class AkjoEngineRuntime implements SmartLifecycle {
 
             // Prepare everything on render thread loop
             context.scheduler().render().__engine_setPostFrameTask(
-                    EngineTokens.token(),
-                    GLFW::glfwPollEvents
+                    EngineTokens.token(), () -> {
+                        if (GLFW.glfwInit()) {
+                            GLFW.glfwPollEvents();
+                        }
+                    }
             );
 
             // Start application
