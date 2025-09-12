@@ -1,4 +1,4 @@
-package com.akjostudios.engine.api.common;
+package com.akjostudios.engine.api.common.mailbox;
 
 import com.akjostudios.engine.api.logging.Logger;
 import lombok.RequiredArgsConstructor;

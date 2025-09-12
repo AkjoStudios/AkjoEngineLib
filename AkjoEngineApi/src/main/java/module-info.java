@@ -5,8 +5,9 @@ module AkjoEngineApi {
     requires org.slf4j;
 
     exports com.akjostudios.engine.api;
-    exports com.akjostudios.engine.api.common;
+    exports com.akjostudios.engine.api.common.mailbox;
     exports com.akjostudios.engine.api.common.cancel;
+    exports com.akjostudios.engine.api.common.base;
     exports com.akjostudios.engine.api.context;
     exports com.akjostudios.engine.api.logging;
     exports com.akjostudios.engine.api.lifecycle;

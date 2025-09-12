@@ -1,6 +1,6 @@
 package com.akjostudios.engine.runtime.impl.scheduling;
 
-import com.akjostudios.engine.api.common.Mailbox;
+import com.akjostudios.engine.api.common.mailbox.Mailbox;
 import com.akjostudios.engine.api.common.cancel.Cancellable;
 import com.akjostudios.engine.api.scheduling.TickScheduler;
 import lombok.RequiredArgsConstructor;

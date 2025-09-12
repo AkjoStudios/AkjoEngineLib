@@ -1,7 +1,7 @@
 package com.akjostudios.engine.runtime.impl.threading;
 
-import com.akjostudios.engine.api.common.Mailbox;
-import com.akjostudios.engine.api.common.Waiter;
+import com.akjostudios.engine.api.common.mailbox.Mailbox;
+import com.akjostudios.engine.api.common.mailbox.Waiter;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
