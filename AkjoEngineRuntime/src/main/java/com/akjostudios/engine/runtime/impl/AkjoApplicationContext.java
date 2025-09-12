@@ -11,7 +11,6 @@ import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.time.Time;
 import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
-import com.akjostudios.engine.runtime.impl.monitor.MonitorRegistryImpl;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,8 +31,7 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private Time time;
     private EventBus events;
     private MountableFileSystem fs;
-
-    private final MonitorRegistry monitors = new MonitorRegistryImpl();
+    private MonitorRegistry monitors;
 
     @Override
     public @NotNull Logger logger() {
@@ -99,7 +97,12 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     }
 
     @Override
-    public @NotNull MonitorRegistry monitors() { return monitors; }
+    public @NotNull MonitorRegistry monitors() {
+        if (monitors == null) {
+            throw new IllegalStateException("❗ Monitor registry object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return monitors;
+    }
 
     /**
      * Sets the internal lifecycle object for this application.
@@ -207,5 +210,23 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ File system object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         this.fs = fs;
+    }
+
+    /**
+     * Sets the internal monitor registry for this application
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setMonitors(
+            @NotNull Object token,
+            @NotNull MonitorRegistry monitors
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Monitor registry set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.monitors = monitors;
     }
 }

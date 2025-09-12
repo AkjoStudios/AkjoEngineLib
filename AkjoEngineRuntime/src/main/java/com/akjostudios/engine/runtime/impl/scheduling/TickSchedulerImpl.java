@@ -56,6 +56,7 @@ public final class TickSchedulerImpl implements TickScheduler {
 
     public void onTick() {
         tick.incrementAndGet();
+
         for (Task task : tasks) {
             if (task.isCancelled()) { continue; }
             if (task.remainingTicks > 0) { task.remainingTicks--; }
@@ -67,6 +68,7 @@ public final class TickSchedulerImpl implements TickScheduler {
                 });
             }
         }
+
         tasks.removeIf(Task::isCancelled);
     }
 }

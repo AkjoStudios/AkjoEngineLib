@@ -11,6 +11,7 @@ import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
 import com.akjostudios.engine.runtime.impl.event.EventBusImpl;
 import com.akjostudios.engine.runtime.impl.lifecycle.LifecycleImpl;
+import com.akjostudios.engine.runtime.impl.monitor.MonitorRegistryImpl;
 import com.akjostudios.engine.runtime.impl.resource.file.ClasspathFileSystem;
 import com.akjostudios.engine.runtime.impl.resource.file.RouterFileSystem;
 import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
@@ -174,6 +175,12 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     ASSETS_PATH
             ), ROOT_BASE_PATH);
 
+            // Set monitor registry object
+            context.__engine_setMonitors(
+                    EngineTokens.token(),
+                    new MonitorRegistryImpl()
+            );
+
             // Initialize application
             application.onInit();
 
@@ -209,8 +216,14 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 }
 
                 // Initialize monitor registry
-                context.monitors().__engine_init(EngineTokens.token());
+                context.monitors().__engine_init(EngineTokens.token(), context.events());
             });
+
+            // Prepare everything on render thread loop
+            context.scheduler().render().__engine_setPostFrameTask(
+                    EngineTokens.token(),
+                    GLFW::glfwPollEvents
+            );
 
             // Start application
             application.onStart();

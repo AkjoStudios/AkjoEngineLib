@@ -5,9 +5,15 @@ module AkjoEngineApi {
     requires org.slf4j;
 
     exports com.akjostudios.engine.api;
+
     exports com.akjostudios.engine.api.common.mailbox;
     exports com.akjostudios.engine.api.common.cancel;
     exports com.akjostudios.engine.api.common.base;
+    exports com.akjostudios.engine.api.common.base.position;
+    exports com.akjostudios.engine.api.common.base.resolution;
+    exports com.akjostudios.engine.api.common.base.scale;
+    exports com.akjostudios.engine.api.common.base.size;
+
     exports com.akjostudios.engine.api.context;
     exports com.akjostudios.engine.api.logging;
     exports com.akjostudios.engine.api.lifecycle;
@@ -16,9 +22,7 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.time;
     exports com.akjostudios.engine.api.event;
     exports com.akjostudios.engine.api.resource.file;
+
     exports com.akjostudios.engine.api.monitor;
-    exports com.akjostudios.engine.api.common.base.position;
-    exports com.akjostudios.engine.api.common.base.resolution;
-    exports com.akjostudios.engine.api.common.base.scale;
-    exports com.akjostudios.engine.api.common.base.size;
+    exports com.akjostudios.engine.api.monitor.events;
 }

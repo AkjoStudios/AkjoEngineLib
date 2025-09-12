@@ -93,4 +93,15 @@ public interface IAkjoApplicationContext {
             @NotNull Object token,
             @NotNull MountableFileSystem fs
     ) throws IllegalCallerException, IllegalStateException;
+
+    /**
+     * Sets the internal monitor registry for this application
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    void __engine_setMonitors(
+            @NotNull Object token,
+            @NotNull MonitorRegistry monitors
+    ) throws IllegalCallerException, IllegalStateException;
 }

@@ -1,8 +1,11 @@
 package com.akjostudios.engine.runtime.impl.monitor;
 
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorRegistry;
+import com.akjostudios.engine.api.monitor.events.MonitorConnectedEvent;
+import com.akjostudios.engine.api.monitor.events.MonitorDisconnectedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
@@ -47,7 +50,8 @@ public final class MonitorRegistryImpl implements MonitorRegistry {
      */
     @Override
     public void __engine_init(
-            @NotNull Object token
+            @NotNull Object token,
+            @NotNull EventBus events
     ) throws IllegalCallerException, IllegalStateException {
         EngineTokens.verify(token);
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
@@ -66,9 +70,14 @@ public final class MonitorRegistryImpl implements MonitorRegistry {
         callback.set(GLFWMonitorCallback.create((handle, event) -> {
             if (event == GLFW.GLFW_CONNECTED) {
                 if (monitors.stream().anyMatch(monitor -> monitor.handle() == handle)) { return; }
-                monitors.add(new MonitorImpl(handle));
+                Monitor monitor = new MonitorImpl(handle);
+                monitors.add(monitor);
+                events.publish(new MonitorConnectedEvent(monitor));
             } else if (event == GLFW.GLFW_DISCONNECTED) {
-                monitors.removeIf(monitor -> monitor.handle() == handle);
+                Monitor monitor = getMonitorById(handle);
+                if (monitor == null) { return; }
+                monitors.remove(monitor);
+                events.publish(new MonitorDisconnectedEvent(monitor));
             }
         }));
         GLFW.glfwSetMonitorCallback(callback.get());

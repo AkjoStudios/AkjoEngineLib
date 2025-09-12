@@ -1,5 +1,6 @@
 package com.akjostudios.engine.api.monitor;
 
+import com.akjostudios.engine.api.event.EventBus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +31,10 @@ public interface MonitorRegistry {
      * @throws IllegalCallerException When this method is called externally.
      * @throws IllegalStateException When this method is not called from the render thread.
      */
-    void __engine_init(@NotNull Object token) throws IllegalCallerException, IllegalStateException;
+    void __engine_init(
+            @NotNull Object token,
+            @NotNull EventBus events
+    ) throws IllegalCallerException, IllegalStateException;
 
     /**
      * Stops the monitor registry and unloads all connected monitors.
@@ -38,5 +42,7 @@ public interface MonitorRegistry {
      * @throws IllegalCallerException When this method is called externally.
      * @throws IllegalStateException When this method is not called from the render thread.
      */
-    void __engine_stop(@NotNull Object token) throws IllegalCallerException, IllegalStateException;
+    void __engine_stop(
+            @NotNull Object token
+    ) throws IllegalCallerException, IllegalStateException;
 }
