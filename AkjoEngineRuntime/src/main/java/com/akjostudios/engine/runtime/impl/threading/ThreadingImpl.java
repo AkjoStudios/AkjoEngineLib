@@ -213,22 +213,28 @@ public final class ThreadingImpl implements Threading {
      */
     @Override
     public void __engine_stop(
-            @NotNull Object token
+            @NotNull Object token,
+            @NotNull Runnable renderCleanup,
+            @NotNull Runnable logicCleanup,
+            @NotNull Runnable audioCleanup
     ) throws IllegalCallerException {
         EngineTokens.verify(token);
         if (!started.get() || stopping.getAndSet(true)) { return; }
 
         // Stop audio thread
+        audioMailbox.postBlocking(audioCleanup);
         audioRunning.set(false);
         audioWaiter.wake();
         join(audioThread);
 
         // Stop logic thread
+        logicMailbox.postBlocking(logicCleanup);
         logicRunning.set(false);
         logicWaiter.wake();
         join(logicThread);
 
         // Stop render thread
+        renderMailbox.postBlocking(renderCleanup);
         renderRunning.set(false);
         renderWaiter.wake();
         join(renderThread);

@@ -18,7 +18,10 @@ import com.akjostudios.engine.runtime.impl.scheduling.SchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.TickSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.threading.ThreadingImpl;
 import com.akjostudios.engine.runtime.impl.time.TimeImpl;
+import com.akjostudios.engine.runtime.util.FunctionalUtil;
 import lombok.RequiredArgsConstructor;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.springframework.context.SmartLifecycle;
 
 import java.lang.reflect.InvocationTargetException;
@@ -26,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.*;
@@ -52,6 +56,8 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     private final Map<String, Object> systemProperties;
 
     private final List<EventListenerRegistrar.Registration> eventListenerRegistrations;
+
+    private final AtomicReference<GLFWErrorCallback> glfwErrorCallback = new AtomicReference<>();
 
     private Logger log;
 
@@ -185,6 +191,24 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     }
             );
 
+            // Initialize GLFW
+            renderMailbox.postBlocking(() -> {
+                if (!context.threading().isRenderThread()) {
+                    throw new IllegalStateException("❗ GLFW must be initialized on render thread! This is likely a bug in the engine - please report it using the issue tracker.");
+                }
+
+                glfwErrorCallback.set(GLFWErrorCallback.create((code, message) -> log.error(
+                        "GLFW Error ({}): {}",
+                        code, GLFWErrorCallback.getDescription(code)
+                )));
+                GLFW.glfwSetErrorCallback(glfwErrorCallback.get());
+
+                if (!GLFW.glfwInit()) {
+                    throw new IllegalStateException("❗ GLFW failed to initialize! Check if this build supports your system, otherwise this is likely a bug in the engine - please report it using the issue tracker.");
+                }
+                log.info("ℹ️ GLFW has been initialized and is ready to use.");
+            });
+
             // Start application
             application.onStart();
             running.set(true);
@@ -227,7 +251,17 @@ public class AkjoEngineRuntime implements SmartLifecycle {
         try {
             // Stop application
             application.onStop();
-            context.threading().__engine_stop(EngineTokens.token());
+            context.threading().__engine_stop(
+                    EngineTokens.token(),
+                    () -> {
+                        GLFW.glfwTerminate();
+                        glfwErrorCallback.get().free();
+                        glfwErrorCallback.set(null);
+                        log.info("ℹ️ GLFW has been terminated.");
+                    },
+                    FunctionalUtil.doNothing(),
+                    FunctionalUtil.doNothing()
+            );
             safeDestroy();
         } catch (Exception e) {
             log.error("❗ Failed to stop application!");

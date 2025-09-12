@@ -65,7 +65,10 @@ public interface Threading {
      * @throws IllegalCallerException When this method is called externally.
      */
     void __engine_stop(
-            @NotNull Object token
+            @NotNull Object token,
+            @NotNull Runnable renderCleanup,
+            @NotNull Runnable logicCleanup,
+            @NotNull Runnable audioCleanup
     ) throws IllegalCallerException;
 
     /**
