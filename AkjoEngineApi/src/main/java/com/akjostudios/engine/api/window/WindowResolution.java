@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public record WindowResolution(int width, int height) implements IResolution {
     public WindowResolution {
-        if (width <= 0 || height <= 0) {
+        if (width < 0 || height < 0) {
             throw new IllegalArgumentException("❗ Window resolution must be positive.");
         }
     }

@@ -24,9 +24,18 @@ public final class MonitorRegistryImpl implements MonitorRegistry {
 
     private final AtomicReference<GLFWMonitorCallback> callback = new AtomicReference<>();
 
+    /**
+     * @apiNote This method does not work in the initialization phase.
+     * @return A list of all currently connected monitors.
+     */
     @Override
     public @NotNull List<Monitor> getMonitors() { return monitors; }
 
+    /**
+     * @apiNote This method does not work in the initialization phase and must be called from the render thread.
+     * @throws IllegalStateException When this method is not called from the render thread.
+     * @return The monitor marked as primary.
+     */
     @Override
     public @NotNull Monitor getPrimaryMonitor() throws IllegalStateException {
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
@@ -35,6 +44,10 @@ public final class MonitorRegistryImpl implements MonitorRegistry {
         return Objects.requireNonNull(getMonitorById(GLFW.glfwGetPrimaryMonitor()));
     }
 
+    /**
+     * @apiNote This method does not work in the initialization phase.
+     * @return The monitor with the given id/handle.
+     */
     @Override
     public @Nullable Monitor getMonitorById(long id) {
         return monitors.stream()

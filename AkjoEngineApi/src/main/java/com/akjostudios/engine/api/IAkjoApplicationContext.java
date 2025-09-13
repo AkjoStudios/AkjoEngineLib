@@ -8,6 +8,7 @@ import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.time.Time;
+import com.akjostudios.engine.api.window.WindowRegistry;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
@@ -20,6 +21,7 @@ public interface IAkjoApplicationContext {
     @NotNull EventBus events();
     @NotNull MountableFileSystem fs();
     @NotNull MonitorRegistry monitors();
+    @NotNull WindowRegistry windows();
 
     // Logging
     @NotNull Logger logger();
@@ -103,5 +105,16 @@ public interface IAkjoApplicationContext {
     void __engine_setMonitors(
             @NotNull Object token,
             @NotNull MonitorRegistry monitors
+    ) throws IllegalCallerException, IllegalStateException;
+
+    /**
+     * Sets the internal window registry for this application
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    void __engine_setWindows(
+            @NotNull Object token,
+            @NotNull WindowRegistry windows
     ) throws IllegalCallerException, IllegalStateException;
 }

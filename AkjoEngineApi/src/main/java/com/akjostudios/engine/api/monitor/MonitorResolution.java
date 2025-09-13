@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public record MonitorResolution(int width, int height) implements IResolution {
     public MonitorResolution {
-        if (width <= 0 || height <= 0) {
+        if (width < 0 || height < 0) {
             throw new IllegalArgumentException("❗ Monitor resolution must be positive.");
         }
     }

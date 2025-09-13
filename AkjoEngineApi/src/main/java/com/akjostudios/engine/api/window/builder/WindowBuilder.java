@@ -9,10 +9,11 @@ public interface WindowBuilder {
     /**
      * Instantiates the window with the given parameters and registers it in the window registry.
      * @apiNote This method does not work in the initialization phase and must be called from the render thread.
+     * @throws ArithmeticException When this method cannot calculate a valid position for the window.
      * @throws IllegalStateException When this method is not called from the render thread.
      * @return The newly created window.
      */
-    @NotNull Window build() throws IllegalStateException;
+    @NotNull Window build() throws ArithmeticException, IllegalStateException;
 
     /**
      * Sets the internal registry hook for the window.

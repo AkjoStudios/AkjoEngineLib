@@ -118,7 +118,7 @@ public final class MonitorImpl implements Monitor {
                 "refreshRate=" + refreshRate() + ", " +
                 "size=" + size() + ", " +
                 "scale=" + scale() + ", " +
-                "screenAre=" + screenArea() + ", " +
+                "screenArea=" + screenArea() + ", " +
                 "gamma=" + gamma() + ")";
     }
 }

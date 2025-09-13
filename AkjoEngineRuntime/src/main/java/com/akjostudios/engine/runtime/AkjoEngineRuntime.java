@@ -19,6 +19,7 @@ import com.akjostudios.engine.runtime.impl.scheduling.SchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.TickSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.threading.ThreadingImpl;
 import com.akjostudios.engine.runtime.impl.time.TimeImpl;
+import com.akjostudios.engine.runtime.impl.window.WindowRegistryImpl;
 import com.akjostudios.engine.runtime.util.FunctionalUtil;
 import lombok.RequiredArgsConstructor;
 import org.lwjgl.glfw.GLFW;
@@ -185,6 +186,12 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     new MonitorRegistryImpl()
             );
 
+            // Set window registry object
+            context.__engine_setWindows(
+                    EngineTokens.token(),
+                    new WindowRegistryImpl()
+            );
+
             // Initialize application
             application.onInit();
 
@@ -221,10 +228,13 @@ public class AkjoEngineRuntime implements SmartLifecycle {
 
                 // Initialize monitor registry
                 context.monitors().__engine_init(EngineTokens.token(), context.events());
+
+                // Initialize window registry
+                context.windows().__engine_init(EngineTokens.token(), context.scheduler().render());
             });
 
             // Prepare everything on render thread loop
-            context.scheduler().render().__engine_setPostFrameTask(
+            context.scheduler().render().__engine_addPostFrameTask(
                     EngineTokens.token(), () -> {
                         if (GLFW.glfwInit()) {
                             GLFW.glfwPollEvents();
@@ -277,6 +287,9 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             context.threading().__engine_stop(
                     EngineTokens.token(),
                     () -> {
+                        // Stop window registry
+                        context.windows().__engine_stop(EngineTokens.token());
+
                         // Stop monitor registry
                         context.monitors().__engine_stop(EngineTokens.token());
 

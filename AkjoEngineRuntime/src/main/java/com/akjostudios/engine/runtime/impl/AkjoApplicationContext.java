@@ -10,6 +10,7 @@ import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.time.Time;
+import com.akjostudios.engine.api.window.WindowRegistry;
 import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +33,7 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private EventBus events;
     private MountableFileSystem fs;
     private MonitorRegistry monitors;
+    private WindowRegistry windows;
 
     @Override
     public @NotNull Logger logger() {
@@ -102,6 +104,14 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Monitor registry object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         return monitors;
+    }
+
+    @Override
+    public @NotNull WindowRegistry windows() {
+        if (windows == null) {
+            throw new IllegalStateException("❗ Window registry object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return windows;
     }
 
     /**
@@ -228,5 +238,23 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ Monitor registry set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         this.monitors = monitors;
+    }
+
+    /**
+     * Sets the internal window registry for this application
+     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setWindows(
+            @NotNull Object token,
+            @NotNull WindowRegistry windows
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Window registry set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.windows = windows;
     }
 }

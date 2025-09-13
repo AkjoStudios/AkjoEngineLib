@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public record MonitorContentScale(double scaleX, double scaleY) implements IScale2D {
     public MonitorContentScale {
-        if (scaleX <= 0 || scaleY <= 0) {
+        if (scaleX < 0 || scaleY < 0) {
             throw new IllegalArgumentException("❗ Monitor content scale must be positive.");
         }
     }

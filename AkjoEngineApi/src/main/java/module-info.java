@@ -25,4 +25,6 @@ module AkjoEngineApi {
 
     exports com.akjostudios.engine.api.monitor;
     exports com.akjostudios.engine.api.monitor.events;
+    exports com.akjostudios.engine.api.window;
+    exports com.akjostudios.engine.api.window.builder;
 }

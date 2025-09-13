@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public record MonitorSize(double widthMm, double heightMm) implements ISize2D {
     public MonitorSize {
-        if (widthMm <= 0 || heightMm <= 0) {
+        if (widthMm < 0 || heightMm < 0) {
             throw new IllegalArgumentException("❗ Monitor size must be positive.");
         }
     }

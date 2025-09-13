@@ -1,9 +1,11 @@
 package com.akjostudios.engine.api.window.builder;
 
 import com.akjostudios.engine.api.monitor.MonitorPosition;
+import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
 import com.akjostudios.engine.api.window.WindowOptions;
 import com.akjostudios.engine.api.window.WindowResolution;
+import com.akjostudios.engine.api.window.WindowResolutionProvider;
 import com.akjostudios.engine.api.window.WindowVisibility;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +16,10 @@ public interface WindowedWindowBuilder extends WindowBuilder {
      */
     @NotNull WindowedWindowBuilder resolution(@NotNull WindowResolution resolution);
     /**
+     * Sets the initial resolution of the windowed window using the given provider.
+     */
+    @NotNull WindowedWindowBuilder resolution(@NotNull WindowResolutionProvider provider);
+    /**
      * Sets the initial position of the windowed window on the virtual screen.
      */
     @NotNull WindowedWindowBuilder position(@NotNull ScreenPosition position);
@@ -21,6 +27,10 @@ public interface WindowedWindowBuilder extends WindowBuilder {
      * Sets the initial position of the windowed window relative to the current monitor.
      */
     @NotNull WindowedWindowBuilder position(@NotNull MonitorPosition position);
+    /**
+     * Sets the initial position of the windowed window relative to the current monitor using the given provider.
+     */
+    @NotNull WindowedWindowBuilder position(@NotNull MonitorPositionProvider provider);
     /**
      * Sets the initial visibility of the windowed window.
      */

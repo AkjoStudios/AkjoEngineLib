@@ -9,6 +9,7 @@ import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorPosition;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2D, HasScreenArea {
@@ -19,7 +20,8 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
     /**
      * @return The name/title of this window.
      */
-    @Override String name();
+    @Override
+    @NotNull String name();
     /**
      * Sets the name/title of this window.
      */
@@ -30,20 +32,26 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
     @NotNull ScreenPosition position();
     /**
      * Sets the position of this window on the virtual screen.
+     * @throws IllegalArgumentException When the given position is outside the range of an integer.
      */
-    void position(@NotNull ScreenPosition position);
+    void position(@NotNull ScreenPosition position) throws IllegalArgumentException;
     /**
+     * @throws IllegalStateException When the window is not attached to a monitor.
      * @return The position of this window relative to the monitor.
      */
-    @NotNull MonitorPosition monitorPosition();
+    @NotNull MonitorPosition monitorPosition() throws IllegalStateException;
     /**
      * Sets the position of this window relative to the current monitor.
+     * @throws IllegalArgumentException When the given position is outside the range of an integer.
+     * @throws ArithmeticException When the final position is outside the range of an integer.
+     * @throws IllegalStateException When the window is not attached to a monitor.
      */
-    void monitorPosition(@NotNull MonitorPosition position);
+    void monitorPosition(@NotNull MonitorPosition position) throws IllegalArgumentException, ArithmeticException, IllegalStateException;
     /**
+     * @throws IllegalStateException When the window is not attached to a monitor.
      * @return The current monitor this window is on.
      */
-    @NotNull Monitor monitor();
+    @NotNull Monitor monitor() throws IllegalStateException;
     /**
      * @return The current resolution of this window.
      */
@@ -55,7 +63,7 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
     /**
      * @return The current scale of this window.
      */
-    @NotNull WindowContentScale scale();
+    @Nullable WindowContentScale scale();
     /**
      * @return The actual work area of this window on the virtual screen.
      */
@@ -81,7 +89,27 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      */
     @NotNull WindowOptions options();
     /**
-     * Sets the options for this window to the given value.
+     * Sets the resizable option for this window.
      */
-    void options(@NotNull WindowOptions options);
+    void resizable(boolean resizable);
+
+    /**
+     * Swaps the buffers of this window.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the render thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the render thread.
+     */
+    void __engine_swapBuffers(
+            @NotNull Object token
+    ) throws IllegalCallerException, IllegalStateException;
+
+    /**
+     * Destroys this window.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the render thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the render thread.
+     */
+    void __engine_destroy(
+            @NotNull Object token
+    ) throws IllegalCallerException, IllegalStateException;
 }

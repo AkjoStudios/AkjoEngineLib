@@ -1,19 +1,16 @@
 package com.akjostudios.engine.runtime.impl.scheduling;
 
-import com.akjostudios.engine.api.common.mailbox.Mailbox;
 import com.akjostudios.engine.api.common.cancel.Cancellable;
+import com.akjostudios.engine.api.common.mailbox.Mailbox;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.MAIN_THREAD_NAME;
 
 @RequiredArgsConstructor
 public final class FrameSchedulerImpl implements FrameScheduler {
@@ -41,7 +38,7 @@ public final class FrameSchedulerImpl implements FrameScheduler {
 
     private final Mailbox mailbox;
 
-    private Runnable postFrameTask;
+    private final List<Runnable> postFrameTasks = new CopyOnWriteArrayList<>();
 
     @Override
     public @NotNull Cancellable everyFrame(@NotNull Runnable task) {
@@ -75,26 +72,21 @@ public final class FrameSchedulerImpl implements FrameScheduler {
             }
         }
 
-        if (postFrameTask != null) { mailbox.postOrThrow(postFrameTask); }
+        mailbox.postAll(postFrameTasks);
         tasks.removeIf(Task::isCancelled);
     }
 
     /**
-     * Sets the post-frame task for this frame scheduler.
-     * @apiNote Must be called by the runtime implementation of the engine AND from the main thread.
+     * Adds the post-frame task for this frame scheduler.
+     * @apiNote Must be called by the runtime implementation of the engine.
      * @throws IllegalCallerException When this method is called externally.
-     * @throws IllegalStateException When this method is not called from the main thread.
      */
     @Override
-    public void __engine_setPostFrameTask(
+    public void __engine_addPostFrameTask(
             @NotNull Object token,
             @NotNull Runnable task
-    ) throws IllegalCallerException, IllegalStateException {
+    ) throws IllegalCallerException {
         EngineTokens.verify(token);
-        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
-            throw new IllegalStateException("❗ Post frame task is not being initialized on main thread! This is likely a bug in the engine - please report it using the issue tracker.");
-        }
-
-        this.postFrameTask = task;
+        postFrameTasks.add(task);
     }
 }

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public record WindowContentScale(double scaleX, double scaleY) implements IScale2D {
     public WindowContentScale {
-        if (scaleX <= 0 || scaleY <= 0) {
+        if (scaleX < 0 || scaleY < 0) {
             throw new IllegalArgumentException("❗ Window content scale must be positive.");
         }
     }
