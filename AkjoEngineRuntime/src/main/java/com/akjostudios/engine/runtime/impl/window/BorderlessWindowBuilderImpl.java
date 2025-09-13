@@ -1,7 +1,6 @@
 package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.common.base.position.HasPosition2D;
-import com.akjostudios.engine.api.common.base.resolution.HasResolution;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorWorkArea;
@@ -57,11 +56,10 @@ public final class BorderlessWindowBuilderImpl extends AbstractWindowBuilder imp
 
         MonitorWorkArea workArea = monitor.screenArea();
         HasPosition2D positionProvider = workArea != null ? workArea : monitor;
-        HasResolution resolutionProvider = workArea != null ? workArea : monitor;
         final int finalX = Math.toIntExact(positionProvider.position().x());
         final int finalY = Math.toIntExact(positionProvider.position().y());
-        final int finalWidth = resolutionProvider.resolution().width();
-        final int finalHeight = resolutionProvider.resolution().height();
+        final int finalWidth = monitor.resolution().width();
+        final int finalHeight = monitor.resolution().height();
 
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);

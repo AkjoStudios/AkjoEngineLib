@@ -7,6 +7,7 @@ import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowMode;
 import com.akjostudios.engine.api.window.WindowRegistry;
 import com.akjostudios.engine.api.window.builder.BorderlessWindowBuilder;
+import com.akjostudios.engine.api.window.builder.FullscreenWindowBuilder;
 import com.akjostudios.engine.api.window.builder.WindowBuilder;
 import com.akjostudios.engine.api.window.builder.WindowedWindowBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,7 @@ public final class WindowRegistryImpl implements WindowRegistry {
             impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
         }
-        if (builderType == FullscreenWindowBuilderImpl.class) {
+        if (builderType == FullscreenWindowBuilder.class) {
             T impl = builderType.cast(new FullscreenWindowBuilderImpl(title, monitor, vsync));
             impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
