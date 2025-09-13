@@ -13,7 +13,7 @@ public record MonitorPosition(@NotNull Monitor monitor, long x, long y) implemen
     }
 
     public static @NotNull MonitorPosition TOP_LEFT(@NotNull Monitor monitor, @NotNull IResolution object) {
-        return new MonitorPosition(monitor, 1, 1);
+        return new MonitorPosition(monitor, 0, 1);
     }
 
     public static @NotNull MonitorPosition TOP_CENTER(@NotNull Monitor monitor, @NotNull IResolution object) {
