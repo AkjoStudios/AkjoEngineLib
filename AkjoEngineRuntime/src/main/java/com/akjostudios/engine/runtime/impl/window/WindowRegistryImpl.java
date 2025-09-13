@@ -12,6 +12,7 @@ import com.akjostudios.engine.api.window.builder.WindowedWindowBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL;
 
 import java.util.List;
 import java.util.Objects;
@@ -91,10 +92,20 @@ public final class WindowRegistryImpl implements WindowRegistry {
         renderScheduler.__engine_addPostFrameTask(
                 token, () -> {
                     if (GLFW.glfwInit()) {
-                        windows.forEach(window -> window.__engine_swapBuffers(token));
+                        windows.forEach(window -> {
+                            window.__engine_swapBuffers(token);
+                            if (window.shouldClose()) {
+                                window.__engine_destroy(token);
+                                windows.remove(window);
+                            }
+                        });
                     }
                 }
         );
+        windows.forEach(window -> {
+            GLFW.glfwMakeContextCurrent(window.handle());
+            GL.createCapabilities();
+        });
     }
 
     /**

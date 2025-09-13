@@ -88,6 +88,15 @@ public final class WindowImpl implements Window {
     }
 
     @Override
+    public @NotNull Monitor monitor() throws IllegalStateException {
+        long monitorHandle = GLFW.glfwGetWindowMonitor(handle);
+        if (monitorHandle == 0) {
+            throw new IllegalStateException("❗ Window is not attached to a monitor! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return new MonitorImpl(monitorHandle);
+    }
+
+    @Override
     public @NotNull WindowResolution resolution() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pwidth = stack.mallocInt(1);
@@ -145,7 +154,7 @@ public final class WindowImpl implements Window {
 
         if (!isVisible) {
             GLFW.glfwShowWindow(handle);
-            GLFW.glfwFocusWindow(handle); 
+            GLFW.glfwFocusWindow(handle);
         }
 
         switch (type) {
@@ -177,13 +186,10 @@ public final class WindowImpl implements Window {
     }
 
     @Override
-    public @NotNull Monitor monitor() throws IllegalStateException {
-        long monitorHandle = GLFW.glfwGetWindowMonitor(handle);
-        if (monitorHandle == 0) {
-            throw new IllegalStateException("❗ Window is not attached to a monitor! This is likely a bug in the engine - please report it using the issue tracker.");
-        }
-        return new MonitorImpl(monitorHandle);
-    }
+    public boolean shouldClose() { return GLFW.glfwWindowShouldClose(handle); }
+
+    @Override
+    public void close() { GLFW.glfwSetWindowShouldClose(handle, true); }
 
     /**
      * Swaps the buffers of this window.

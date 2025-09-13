@@ -92,6 +92,14 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      * Sets the resizable option for this window.
      */
     void resizable(boolean resizable);
+    /**
+     * @return If the window should close.
+     */
+    boolean shouldClose();
+    /**
+     * Sets the flag so the window closes.
+     */
+    void close();
 
     /**
      * Swaps the buffers of this window.
