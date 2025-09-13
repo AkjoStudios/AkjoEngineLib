@@ -1,5 +1,6 @@
 package com.akjostudios.engine.runtime.impl.window;
 
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
@@ -10,6 +11,9 @@ import com.akjostudios.engine.api.window.builder.BorderlessWindowBuilder;
 import com.akjostudios.engine.api.window.builder.FullscreenWindowBuilder;
 import com.akjostudios.engine.api.window.builder.WindowBuilder;
 import com.akjostudios.engine.api.window.builder.WindowedWindowBuilder;
+import com.akjostudios.engine.api.window.events.AllWindowsClosedEvent;
+import com.akjostudios.engine.api.window.events.WindowCreatedEvent;
+import com.akjostudios.engine.api.window.events.WindowDestroyedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
@@ -18,11 +22,14 @@ import org.lwjgl.opengl.GL;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER_THREAD_NAME;
 
 public final class WindowRegistryImpl implements WindowRegistry {
     private final List<Window> windows = new CopyOnWriteArrayList<>();
+
+    private final AtomicReference<EventBus> events = new AtomicReference<>();
 
     /**
      * @throws IllegalArgumentException When the given mode is not one of the standard ones (WINDOWED, BORDERLESS, FULLSCREEN).
@@ -38,7 +45,10 @@ public final class WindowRegistryImpl implements WindowRegistry {
         Class<T> builderType = mode.provide();
         if (builderType == WindowedWindowBuilder.class) {
             T impl = builderType.cast(new WindowedWindowBuilderImpl(title, monitor, vsync));
-            impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
+            impl.__engine_setRegistryHook(EngineTokens.token(), window -> {
+                this.addWindow(window);
+                if (events.get() != null) { events.get().publish(new WindowCreatedEvent(window)); }
+            });
             return impl;
         }
         if (builderType == BorderlessWindowBuilder.class) {
@@ -72,7 +82,10 @@ public final class WindowRegistryImpl implements WindowRegistry {
                 .findFirst().orElse(null);
     }
 
-    private void addWindow(@NotNull Window window) { windows.add(window); }
+    private void addWindow(@NotNull Window window) {
+        windows.add(window);
+        if (events.get() != null) { events.get().publish(new WindowCreatedEvent(window)); }
+    }
 
     /**
      * Initializes the window registry.
@@ -83,7 +96,8 @@ public final class WindowRegistryImpl implements WindowRegistry {
     @Override
     public void __engine_init(
             @NotNull Object token,
-            @NotNull FrameScheduler renderScheduler
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull EventBus events
     ) throws IllegalCallerException, IllegalStateException {
         EngineTokens.verify(token);
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
@@ -98,15 +112,26 @@ public final class WindowRegistryImpl implements WindowRegistry {
                             if (window.shouldClose()) {
                                 window.__engine_destroy(token);
                                 windows.remove(window);
+                                if (this.events.get() != null) {
+                                    this.events.get().publish(new WindowDestroyedEvent(window));
+                                }
+                            }
+                            if (windows.isEmpty()) {
+                                if (this.events.get() != null) {
+                                    this.events.get().publish(new AllWindowsClosedEvent());
+                                }
                             }
                         });
                     }
                 }
         );
+
         windows.forEach(window -> {
             GLFW.glfwMakeContextCurrent(window.handle());
             GL.createCapabilities();
         });
+
+        this.events.set(events);
     }
 
     /**

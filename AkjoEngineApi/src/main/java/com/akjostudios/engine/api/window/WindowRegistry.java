@@ -1,5 +1,6 @@
 package com.akjostudios.engine.api.window;
 
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.builder.WindowBuilder;
@@ -40,7 +41,8 @@ public interface WindowRegistry {
      */
     void __engine_init(
             @NotNull Object token,
-            @NotNull FrameScheduler renderScheduler
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull EventBus events
     ) throws IllegalCallerException, IllegalStateException;
 
     /**

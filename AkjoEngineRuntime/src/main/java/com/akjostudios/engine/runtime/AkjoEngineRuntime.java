@@ -227,10 +227,17 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 }
 
                 // Initialize monitor registry
-                context.monitors().__engine_init(EngineTokens.token(), context.events());
+                context.monitors().__engine_init(
+                        EngineTokens.token(),
+                        context.events()
+                );
 
                 // Initialize window registry
-                context.windows().__engine_init(EngineTokens.token(), context.scheduler().render());
+                context.windows().__engine_init(
+                        EngineTokens.token(),
+                        context.scheduler().render(),
+                        context.events()
+                );
             });
 
             // Prepare everything on render thread loop
