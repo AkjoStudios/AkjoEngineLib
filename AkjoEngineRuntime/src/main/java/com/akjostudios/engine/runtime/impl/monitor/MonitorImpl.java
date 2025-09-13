@@ -96,12 +96,12 @@ public final class MonitorImpl implements Monitor {
     }
 
     @Override
-    public double getGamma() {
+    public double gamma() {
         return gamma;
     }
 
     @Override
-    public void setGamma(double gamma) {
+    public void gamma(double gamma) {
         if (gamma <= 0.0 || Double.isInfinite(gamma)) {
             throw new IllegalArgumentException("❗ Gamma must be set to a finite value and must be greater than 0.0! Given: " + gamma);
         }
@@ -119,6 +119,6 @@ public final class MonitorImpl implements Monitor {
                 "size=" + size() + ", " +
                 "scale=" + scale() + ", " +
                 "screenAre=" + screenArea() + ", " +
-                "gamma=" + getGamma() + ")";
+                "gamma=" + gamma() + ")";
     }
 }

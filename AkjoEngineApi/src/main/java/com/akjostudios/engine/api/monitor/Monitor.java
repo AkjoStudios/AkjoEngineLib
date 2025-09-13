@@ -44,13 +44,12 @@ public interface Monitor extends HasName, HasPosition2D, HasResolution, HasSize2
      * @return The actual work area of this monitor on the virtual screen.
      */
     @Nullable MonitorWorkArea screenArea();
-
     /**
      * @return The currently set gamma value of this monitor.
      */
-    double getGamma();
+    double gamma();
     /**
      * Sets the gamma value of this monitor to the given value.
      */
-    void setGamma(double gamma);
+    void gamma(double gamma);
 }
