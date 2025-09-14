@@ -22,6 +22,8 @@ import com.akjostudios.engine.runtime.impl.time.TimeImpl;
 import com.akjostudios.engine.runtime.impl.window.WindowRegistryImpl;
 import com.akjostudios.engine.runtime.util.FunctionalUtil;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.springframework.context.SmartLifecycle;
@@ -34,22 +36,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import static com.akjostudios.engine.runtime.impl.logging.LoggerImpl.*;
 import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.*;
 
 @RequiredArgsConstructor
 public class AkjoEngineRuntime implements SmartLifecycle {
-    private static final String RUNTIME_LOGGER_NAME = "engine.runtime";
-    private static final String CRASH_LOGGER_NAME = "engine.crash";
-    private static final String THREADING_LOGGER_NAME = "engine.threading";
-    private static final String EVENT_LOGGER_NAME = "engine.event";
-
     private static final String APP_NAME_PROPERTY = "spring.application.name";
     private static final String ENGINE_VERSION_PROPERTY = "engine.version";
 
-    private static final String LIFECYCLE_THREAD_NAME = "Lifecycle";
-
     private static final String ASSETS_PATH = "assets";
-
     private static final String ROOT_BASE_PATH = "/";
 
     private final IAkjoApplication application;
@@ -57,16 +52,17 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     private final AkjoEngineAppProperties properties;
     private final Map<String, Object> systemProperties;
 
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+
     private final List<EventListenerRegistrar.Registration> eventListenerRegistrations;
 
     private final AtomicReference<GLFWErrorCallback> glfwErrorCallback = new AtomicReference<>();
 
+    private final Object lifecycleLock = new Object();
+
     private Logger log;
 
-    private final AtomicBoolean running = new AtomicBoolean(false);
-    private final AtomicBoolean shutdown = new AtomicBoolean(false);
-
-    private final Object lifecycleLock = new Object();
 
     @Override
     public void start() {
@@ -275,7 +271,8 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     @Override
     public boolean isAutoStartup() { return false; }
 
-    private BiConsumer<String, Throwable> createStopHandler() {
+    @Contract(pure = true)
+    private @NotNull BiConsumer<String, Throwable> createStopHandler() {
         return (reason, cause) -> new Thread(() -> {
                 Logger stopLogger = context.logger(RUNTIME_LOGGER_NAME);
                 if (cause != null) {

@@ -8,6 +8,11 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Supplier;
 
 public final class LoggerImpl implements Logger {
+    public static final String RUNTIME_LOGGER_NAME = "engine.runtime";
+    public static final String CRASH_LOGGER_NAME = "engine.crash";
+    public static final String THREADING_LOGGER_NAME = "engine.threading";
+    public static final String EVENT_LOGGER_NAME = "engine.event";
+
     private final org.slf4j.Logger delegate;
 
     public LoggerImpl(@NotNull String name) {

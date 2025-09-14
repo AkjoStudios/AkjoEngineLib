@@ -29,6 +29,7 @@ public final class ThreadingImpl implements Threading {
     public static final String RENDER_THREAD_NAME = "Render";
     public static final String LOGIC_THREAD_NAME = "Logic";
     public static final String AUDIO_THREAD_NAME = "Audio";
+    public static final String LIFECYCLE_THREAD_NAME = "Lifecycle";
     public static final String WORKER_THREAD_PREFIX = "Worker";
 
     private static final int MAILBOX_DRAIN_SIZE = 1024;
