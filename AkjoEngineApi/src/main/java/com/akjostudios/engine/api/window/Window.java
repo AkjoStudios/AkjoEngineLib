@@ -7,6 +7,7 @@ import com.akjostudios.engine.api.common.base.resolution.HasResolution;
 import com.akjostudios.engine.api.common.base.scale.HasScale2D;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorPosition;
+import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,9 +48,14 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      * Sets the position of this window relative to the current monitor.
      * @throws IllegalArgumentException When the given position is outside the range of an integer.
      * @throws ArithmeticException When the final position is outside the range of an integer.
-     * @throws IllegalStateException When the window is not attached to a monitor.
      */
-    void monitorPosition(@NotNull MonitorPosition position) throws IllegalArgumentException, ArithmeticException, IllegalStateException;
+    void monitorPosition(@NotNull MonitorPosition position) throws IllegalArgumentException, ArithmeticException;
+    /**
+     * Sets the position of this window relative to the current monitor using the given provider.
+     * @throws IllegalArgumentException When the given position is outside the range of an integer.
+     * @throws ArithmeticException When the final position is outside the range of an integer.
+     */
+    void monitorPosition(@NotNull MonitorPositionProvider provider) throws IllegalArgumentException, ArithmeticException;
     /**
      * @throws IllegalStateException When the window is not attached to a monitor.
      * @return The current monitor this window is on.
@@ -63,6 +69,10 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      * Sets the resolution of this window to the given value.
      */
     void resolution(@NotNull WindowResolution resolution);
+    /**
+     * Sets the resolution of this window using the value of the given provider.
+     */
+    void resolution(@NotNull WindowResolutionProvider provider);
     /**
      * @return The current scale of this window.
      */

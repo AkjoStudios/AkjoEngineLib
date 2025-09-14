@@ -4,6 +4,7 @@ import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorPosition;
+import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.*;
@@ -125,7 +126,7 @@ public final class WindowImpl implements Window {
     }
 
     @Override
-    public void monitorPosition(@NotNull MonitorPosition position) throws IllegalArgumentException, ArithmeticException, IllegalStateException {
+    public void monitorPosition(@NotNull MonitorPosition position) throws IllegalArgumentException, ArithmeticException {
         if (position.x() > Integer.MAX_VALUE
             || position.y() > Integer.MAX_VALUE
             || position.x() < Integer.MIN_VALUE
@@ -146,6 +147,11 @@ public final class WindowImpl implements Window {
                     current.focused(), current.requestedAttention()
             ));
         });
+    }
+
+    @Override
+    public void monitorPosition(@NotNull MonitorPositionProvider provider) throws IllegalArgumentException, ArithmeticException {
+        monitorPosition(provider.retrieve(monitor(), resolution()));
     }
 
     private @NotNull MonitorPosition calculateMonitorPosition(
@@ -228,6 +234,11 @@ public final class WindowImpl implements Window {
     public @NotNull WindowResolution resolution() {
         if (state.get() == null) { return queryResolution(); }
         return state.get().resolution();
+    }
+
+    @Override
+    public void resolution(@NotNull WindowResolutionProvider provider) {
+        resolution(provider.retrieve(monitor()));
     }
 
     private @NotNull WindowResolution queryResolution() {
