@@ -200,7 +200,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     ), deltaTime -> {
                         try { application.onUpdate(deltaTime); }
                         catch (Exception e) { log.error(
-                                "❗ Failed to call .onUpdate() on application!"
+                                "❗ Failed to call .onUpdate() on application!", e
                         ); }
                     }
             );

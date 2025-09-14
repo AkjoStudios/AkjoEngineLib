@@ -191,6 +191,17 @@ public final class WindowImpl implements Window {
     @Override
     public void close() { GLFW.glfwSetWindowShouldClose(handle, true); }
 
+    @Override
+    public String toString() {
+        return "WindowImpl[" + handle + "]" + "(" +
+                "name=" + name() + ", " +
+                "position=" + position() + ", " +
+                "resolution=" + resolution() + ", " +
+                "scale=" + scale() + ", " +
+                "visibility=" + visibility() + ", " +
+                "options=" + options() + ")";
+    }
+
     /**
      * Swaps the buffers of this window.
      * @apiNote Must be called by the runtime implementation of the engine AND from the render thread.
