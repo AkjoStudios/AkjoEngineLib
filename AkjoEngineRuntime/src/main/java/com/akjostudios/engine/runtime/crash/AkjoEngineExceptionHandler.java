@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Consumer;
 
 @RequiredArgsConstructor
-public final class AkjoEngineExceptionHandler implements Thread.UncaughtExceptionHandler{
+public final class AkjoEngineExceptionHandler implements Thread.UncaughtExceptionHandler {
     @NotNull private final Logger logger;
     @NotNull private final String appName;
     @NotNull private final String appVersion;
