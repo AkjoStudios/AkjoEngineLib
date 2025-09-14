@@ -21,5 +21,5 @@ if (-not (Test-Path -LiteralPath $JAR)) {
   exit 1
 }
 
-& java "-Dspring.profiles.active=app-build,$platformProfile" '-XX:+UseShenandoahGC' '-jar' "$JAR"
+& java "-Dspring.profiles.active=app-build,$platformProfile" '-XX:+UseShenandoahGC' '-Xms1G' '-Xmx1G' '-jar' "$JAR"
 exit $LASTEXITCODE

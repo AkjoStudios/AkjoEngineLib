@@ -1,6 +1,8 @@
 package com.akjostudios.engine.runtime.impl.window;
 
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.monitor.Monitor;
+import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowRegistryHook;
 import com.akjostudios.engine.api.window.WindowVisibility;
@@ -14,6 +16,9 @@ public abstract class AbstractWindowBuilder {
     protected final String title;
     protected final Monitor monitor;
     protected final boolean vsync;
+
+    private final FrameScheduler renderScheduler;
+    private final EventBus events;
 
     protected WindowRegistryHook hook;
 
@@ -57,6 +62,6 @@ public abstract class AbstractWindowBuilder {
     private @NotNull Window makeContextCurrent(long handle) {
         GLFW.glfwMakeContextCurrent(handle);
         GLFW.glfwSwapInterval(vsync ? 1 : 0);
-        return new WindowImpl(handle);
+        return new WindowImpl(handle, renderScheduler, events);
     }
 }

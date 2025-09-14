@@ -1,10 +1,12 @@
 package com.akjostudios.engine.runtime.impl.window;
 
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorPosition;
 import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
+import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.*;
 import com.akjostudios.engine.api.window.builder.WindowedWindowBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -20,8 +22,11 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
     private WindowVisibility visibility = WindowVisibility.DEFAULT;
     private WindowOptions options = WindowOptions.DEFAULT;
 
-    public WindowedWindowBuilderImpl(@NotNull String title, @NotNull Monitor monitor, boolean vsync) {
-        super(title, monitor, vsync);
+    public WindowedWindowBuilderImpl(
+            @NotNull String title, @NotNull Monitor monitor, boolean vsync,
+            @NotNull FrameScheduler renderScheduler, @NotNull EventBus events
+            ) {
+        super(title, monitor, vsync, renderScheduler, events);
     }
 
     @Override

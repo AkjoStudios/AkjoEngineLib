@@ -6,12 +6,6 @@ import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public record MonitorPosition(@NotNull Monitor monitor, long x, long y) implements IPosition2D {
-    public MonitorPosition {
-        if (x < 0 || y < 0) {
-            throw new IllegalArgumentException("❗ Monitor position must be positive.");
-        }
-    }
-
     public static @NotNull MonitorPosition TOP_LEFT(@NotNull Monitor monitor, @NotNull IResolution object) {
         return new MonitorPosition(monitor, 0, 1);
     }

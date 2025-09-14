@@ -6,6 +6,7 @@ import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorRegistry;
 import com.akjostudios.engine.api.monitor.events.MonitorConnectedEvent;
 import com.akjostudios.engine.api.monitor.events.MonitorDisconnectedEvent;
+import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
@@ -22,6 +23,8 @@ import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER
 public final class MonitorRegistryImpl implements MonitorRegistry {
     private final List<Monitor> monitors = new CopyOnWriteArrayList<>();
 
+    private final AtomicReference<FrameScheduler> renderScheduler = new AtomicReference<>();
+    private final AtomicReference<MonitorRegistryState> state = new AtomicReference<>();
     private final AtomicReference<GLFWMonitorCallback> callback = new AtomicReference<>();
 
     /**
@@ -32,16 +35,15 @@ public final class MonitorRegistryImpl implements MonitorRegistry {
     public @NotNull List<Monitor> getMonitors() { return monitors; }
 
     /**
-     * @apiNote This method does not work in the initialization phase and must be called from the render thread.
-     * @throws IllegalStateException When this method is not called from the render thread.
+     * @apiNote This method does not work in the initialization phase.
      * @return The monitor marked as primary.
      */
     @Override
-    public @NotNull Monitor getPrimaryMonitor() throws IllegalStateException {
-        if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
-            throw new IllegalStateException("❗ MonitorRegistry.getPrimaryMonitor() can only be called from the render thread!");
-        }
-        return Objects.requireNonNull(getMonitorById(GLFW.glfwGetPrimaryMonitor()));
+    public @Nullable Monitor getPrimaryMonitor() {
+        if (state.get() == null) { return null; }
+        return Objects.requireNonNull(getMonitorById(
+                state.get().primaryMonitor()
+        ));
     }
 
     /**
@@ -64,6 +66,7 @@ public final class MonitorRegistryImpl implements MonitorRegistry {
     @Override
     public void __engine_init(
             @NotNull Object token,
+            @NotNull FrameScheduler renderScheduler,
             @NotNull EventBus events
     ) throws IllegalCallerException, IllegalStateException {
         EngineTokens.verify(token);
@@ -72,24 +75,34 @@ public final class MonitorRegistryImpl implements MonitorRegistry {
         }
 
         monitors.clear();
+        this.renderScheduler.set(renderScheduler);
 
         PointerBuffer buffer = GLFW.glfwGetMonitors();
         if (buffer == null) { return; }
-
         for (int i = 0; i < buffer.limit(); i++) {
-            monitors.add(new MonitorImpl(buffer.get(i)));
+            monitors.add(new MonitorImpl(buffer.get(i), this.renderScheduler.get()));
         }
+
+        this.renderScheduler.get().immediate(() -> state.set(new MonitorRegistryState(
+                GLFW.glfwGetPrimaryMonitor()
+        )));
 
         callback.set(GLFWMonitorCallback.create((handle, event) -> {
             if (event == GLFW.GLFW_CONNECTED) {
                 if (monitors.stream().anyMatch(monitor -> monitor.handle() == handle)) { return; }
-                Monitor monitor = new MonitorImpl(handle);
+                Monitor monitor = new MonitorImpl(handle, this.renderScheduler.get());
                 monitors.add(monitor);
+                this.renderScheduler.get().immediate(() -> state.set(new MonitorRegistryState(
+                        GLFW.glfwGetPrimaryMonitor()
+                )));
                 events.publish(new MonitorConnectedEvent(monitor));
             } else if (event == GLFW.GLFW_DISCONNECTED) {
                 Monitor monitor = getMonitorById(handle);
                 if (monitor == null) { return; }
                 monitors.remove(monitor);
+                this.renderScheduler.get().immediate(() -> state.set(new MonitorRegistryState(
+                        GLFW.glfwGetPrimaryMonitor()
+                )));
                 events.publish(new MonitorDisconnectedEvent(monitor));
             }
         }));

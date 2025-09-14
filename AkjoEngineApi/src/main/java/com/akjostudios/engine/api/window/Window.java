@@ -20,8 +20,11 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
     /**
      * @return The name/title of this window.
      */
-    @Override
     @NotNull String name();
+    /**
+     * @return The name/title of this window.
+     */
+    default @NotNull String title() { return name(); }
     /**
      * Sets the name/title of this window.
      */
@@ -92,6 +95,20 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      * Sets the resizable option for this window.
      */
     void resizable(boolean resizable);
+    /**
+     * @return If this window is currently focused.
+     */
+    boolean focused();
+    /**
+     * Focuses this window.
+     * @apiNote Use this method carefully, as it is very disruptive if input focus moves to another window "randomly". Use requestAttention() instead for a less disruptive way.
+     */
+    void focus();
+    /**
+     * Requests attention to this window from the user.
+     */
+    void requestAttention();
+
     /**
      * @return If the window should close.
      */

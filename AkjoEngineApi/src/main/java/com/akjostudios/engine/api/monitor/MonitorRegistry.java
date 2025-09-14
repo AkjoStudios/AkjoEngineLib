@@ -1,6 +1,7 @@
 package com.akjostudios.engine.api.monitor;
 
 import com.akjostudios.engine.api.event.EventBus;
+import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,11 +15,10 @@ public interface MonitorRegistry {
      */
     @NotNull List<Monitor> getMonitors();
     /**
-     * @apiNote This method does not work in the initialization phase and must be called from the render thread.
-     * @throws IllegalStateException When this method is not called from the render thread.
+     * @apiNote This method does not work in the initialization phase.
      * @return The monitor marked as primary.
      */
-    @NotNull Monitor getPrimaryMonitor() throws IllegalStateException;
+    @Nullable Monitor getPrimaryMonitor();
     /**
      * @apiNote This method does not work in the initialization phase.
      * @return The monitor with the given id/handle.
@@ -33,6 +33,7 @@ public interface MonitorRegistry {
      */
     void __engine_init(
             @NotNull Object token,
+            @NotNull FrameScheduler renderScheduler,
             @NotNull EventBus events
     ) throws IllegalCallerException, IllegalStateException;
 

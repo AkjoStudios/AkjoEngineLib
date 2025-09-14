@@ -1,7 +1,7 @@
 package com.akjostudios.engine.api.window;
 
 import com.akjostudios.engine.api.event.EventBus;
-import com.akjostudios.engine.api.monitor.Monitor;
+import com.akjostudios.engine.api.monitor.MonitorProvider;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.builder.WindowBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -12,13 +12,13 @@ import java.util.List;
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public interface WindowRegistry {
     /**
-     * @throws IllegalArgumentException When the given mode is not one of the standard ones (WINDOWED, BORDERLESS, FULLSCREEN).
+     * @throws IllegalArgumentException When the given mode is not one of the standard ones (WINDOWED, BORDERLESS, FULLSCREEN) or the monitor is not available.
      * @return A window builder for the given parameters.
      */
     <T extends WindowBuilder> @NotNull T builder(
             @NotNull String title,
             @NotNull WindowMode<T> mode,
-            @NotNull Monitor monitor,
+            @NotNull MonitorProvider monitor,
             boolean vsync
     ) throws IllegalArgumentException;
 

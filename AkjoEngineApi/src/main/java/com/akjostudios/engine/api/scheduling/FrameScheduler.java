@@ -16,6 +16,11 @@ public interface FrameScheduler {
      */
     @NotNull Cancellable afterFrames(int frames, @NotNull Runnable task);
     /**
+     * Runs the given task as soon as possible.
+     * @return An object which can be used to cancel the task.
+     */
+    @NotNull Cancellable immediate(@NotNull Runnable task);
+    /**
      * @return The current frame count
      */
     long currentFrame();

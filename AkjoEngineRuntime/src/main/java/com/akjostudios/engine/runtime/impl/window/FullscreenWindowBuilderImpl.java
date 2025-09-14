@@ -1,8 +1,10 @@
 package com.akjostudios.engine.runtime.impl.window;
 
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorResolution;
+import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowRegistryHook;
 import com.akjostudios.engine.api.window.builder.FullscreenWindowBuilder;
@@ -14,8 +16,11 @@ import java.util.Objects;
 import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER_THREAD_NAME;
 
 public final class FullscreenWindowBuilderImpl extends AbstractWindowBuilder implements FullscreenWindowBuilder {
-    public FullscreenWindowBuilderImpl(@NotNull String title, @NotNull Monitor monitor, boolean vsync) {
-        super(title, monitor, vsync);
+    public FullscreenWindowBuilderImpl(
+            @NotNull String title, @NotNull Monitor monitor, boolean vsync,
+            @NotNull FrameScheduler renderScheduler, @NotNull EventBus events
+    ) {
+        super(title, monitor, vsync, renderScheduler, events);
     }
 
     /**

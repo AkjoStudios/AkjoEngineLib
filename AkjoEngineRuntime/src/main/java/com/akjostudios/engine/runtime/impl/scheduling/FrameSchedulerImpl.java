@@ -55,6 +55,11 @@ public final class FrameSchedulerImpl implements FrameScheduler {
     }
 
     @Override
+    public @NotNull Cancellable immediate(@NotNull Runnable task) {
+        return afterFrames(0, task);
+    }
+
+    @Override
     public long currentFrame() { return frame.get(); }
 
     public void onFrame() {

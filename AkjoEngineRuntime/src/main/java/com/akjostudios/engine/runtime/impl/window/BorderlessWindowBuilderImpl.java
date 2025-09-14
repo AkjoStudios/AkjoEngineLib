@@ -1,9 +1,11 @@
 package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.common.base.position.HasPosition2D;
+import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorWorkArea;
+import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowRegistryHook;
 import com.akjostudios.engine.api.window.WindowVisibility;
@@ -19,8 +21,11 @@ public final class BorderlessWindowBuilderImpl extends AbstractWindowBuilder imp
     private WindowVisibility visibility = WindowVisibility.DEFAULT;
     private boolean resizable = true;
 
-    public BorderlessWindowBuilderImpl(@NotNull String title, @NotNull Monitor monitor, boolean vsync) {
-        super(title, monitor, vsync);
+    public BorderlessWindowBuilderImpl(
+            @NotNull String title, @NotNull Monitor monitor, boolean vsync,
+            @NotNull FrameScheduler renderScheduler, @NotNull EventBus events
+    ) {
+        super(title, monitor, vsync, renderScheduler, events);
     }
 
     @Override

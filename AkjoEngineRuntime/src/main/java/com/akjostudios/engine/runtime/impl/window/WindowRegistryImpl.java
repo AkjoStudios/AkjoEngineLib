@@ -3,6 +3,7 @@ package com.akjostudios.engine.runtime.impl.window;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
+import com.akjostudios.engine.api.monitor.MonitorProvider;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowMode;
@@ -29,6 +30,7 @@ import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER
 public final class WindowRegistryImpl implements WindowRegistry {
     private final List<Window> windows = new CopyOnWriteArrayList<>();
 
+    private final AtomicReference<FrameScheduler> renderScheduler = new AtomicReference<>();
     private final AtomicReference<EventBus> events = new AtomicReference<>();
 
     /**
@@ -39,25 +41,35 @@ public final class WindowRegistryImpl implements WindowRegistry {
     public <T extends WindowBuilder> @NotNull T builder(
             @NotNull String title,
             @NotNull WindowMode<T> mode,
-            @NotNull Monitor monitor,
+            @NotNull MonitorProvider monitor,
             boolean vsync
     ) throws IllegalArgumentException {
         Class<T> builderType = mode.provide();
+        Monitor finalMonitor = monitor.get();
+        if (finalMonitor == null) {
+            throw new IllegalArgumentException("❗ Monitor cannot be null when getting a window builder! Note: The primary monitor is not available in the beginning - use the render scheduler to wait for it to be available.");
+        }
         if (builderType == WindowedWindowBuilder.class) {
-            T impl = builderType.cast(new WindowedWindowBuilderImpl(title, monitor, vsync));
-            impl.__engine_setRegistryHook(EngineTokens.token(), window -> {
-                this.addWindow(window);
-                if (events.get() != null) { events.get().publish(new WindowCreatedEvent(window)); }
-            });
+            T impl = builderType.cast(new WindowedWindowBuilderImpl(
+                    title, monitor.get(), vsync,
+                    renderScheduler.get(), events.get()
+            ));
+            impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
         }
         if (builderType == BorderlessWindowBuilder.class) {
-            T impl = builderType.cast(new BorderlessWindowBuilderImpl(title, monitor, vsync));
+            T impl = builderType.cast(new BorderlessWindowBuilderImpl(
+                    title, monitor.get(), vsync,
+                    renderScheduler.get(), events.get()
+            ));
             impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
         }
         if (builderType == FullscreenWindowBuilder.class) {
-            T impl = builderType.cast(new FullscreenWindowBuilderImpl(title, monitor, vsync));
+            T impl = builderType.cast(new FullscreenWindowBuilderImpl(
+                    title, monitor.get(), vsync,
+                    renderScheduler.get(), events.get()
+            ));
             impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
         }
@@ -131,6 +143,7 @@ public final class WindowRegistryImpl implements WindowRegistry {
             GL.createCapabilities();
         });
 
+        this.renderScheduler.set(renderScheduler);
         this.events.set(events);
     }
 
