@@ -10,7 +10,11 @@ import java.util.Optional;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public interface AssetLoader<I> {
-    boolean supports(@NotNull ResourcePath path, Map<String, Object> params);
+    boolean supports(
+            @NotNull ResourcePath path,
+            @NotNull Map<String, Object> params
+    );
+
     @NotNull Optional<I> load(
             @NotNull FileSystem fs,
             @NotNull ResourcePath path,

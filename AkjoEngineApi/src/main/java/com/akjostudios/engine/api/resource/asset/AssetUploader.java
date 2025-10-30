@@ -6,15 +6,15 @@ import java.util.Map;
 import java.util.Optional;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
-public interface AssetDecoder<I, O> {
+public interface AssetUploader<I, O> {
     boolean supports(
             @NotNull Class<I> input,
             @NotNull Class<O> output,
             @NotNull Map<String, Object> params
     );
 
-    @NotNull Optional<O> decode(
-            @NotNull I input,
+    @NotNull Optional<O> upload(
+            @NotNull I cpu,
             @NotNull Map<String, Object> params
     ) throws Exception;
 }
