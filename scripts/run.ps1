@@ -10,6 +10,7 @@ $OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Obj
 
 $platformProfile = "platform-$Platform"
 
+$env:MAVEN_OPTS="--enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow"
 & ./mvnw.cmd 'clean' 'package' "-P=app-build,$platformProfile"
 if ($LASTEXITCODE -ne 0) {
   exit $LASTEXITCODE
@@ -21,5 +22,5 @@ if (-not (Test-Path -LiteralPath $JAR)) {
   exit 1
 }
 
-& java "-Dspring.profiles.active=app-build,$platformProfile" '-XX:+UseShenandoahGC' '-Xms1G' '-Xmx1G' '-jar' "$JAR"
+& java "-Dspring.profiles.active=app-build,$platformProfile" '--enable-native-access=ALL-UNNAMED' '--sun-misc-unsafe-memory-access=allow' '-XX:+UseShenandoahGC' '-Xms1G' '-Xmx1G' '-jar' "$JAR"
 exit $LASTEXITCODE

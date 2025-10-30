@@ -7,21 +7,18 @@
     <packaging>pom</packaging>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <java.version>21</java.version>
+        <java.version>25</java.version>
         <engine.version>${project.version}</engine.version>
         <build.name>${project.artifactId}-${project.version}</build.name>
 
-        <spring-boot.version>3.5.5</spring-boot.version>
+        <spring-boot.version>3.5.7</spring-boot.version>
         <lwjgl.version>3.3.6</lwjgl.version>
-        <jetbrains.annotations.version>26.0.2</jetbrains.annotations.version>
+        <jetbrains.annotations.version>26.0.2-1</jetbrains.annotations.version>
 
-        <maven.compiler.version>3.14.0</maven.compiler.version>
+        <maven.compiler.version>3.14.1</maven.compiler.version>
     </properties>
 
     <profiles>
@@ -227,12 +224,12 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.version}</version>
                 <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <!--suppress MavenModelInspection -->
-                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

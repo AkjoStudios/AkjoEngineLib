@@ -1,1 +1,2 @@
-./mwnv clean package -Papp-build,platform-"$2" && java -D"spring.profiles.active=app-build,platform-$2" -jar ./target/"$1"-exec.jar
+export MAVEN_OPTS="--enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow"
+./mwnv clean package -Papp-build,platform-"$2" && java -D"spring.profiles.active=app-build,platform-$2" --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -XX:+UseShenandoahGC -Xms1G -Xmx1G -jar ./target/"$1"-exec.jar
