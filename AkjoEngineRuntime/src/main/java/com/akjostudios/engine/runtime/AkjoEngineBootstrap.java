@@ -33,7 +33,7 @@ public class AkjoEngineBootstrap {
             Map.entry("logging.level.org.springframework.boot", "OFF")
     );
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         new SpringApplicationBuilder(AkjoEngineConfig.class).initializers(
                 new AkjoEnginePropertyInitializer(),
                 new AkjoEngineBuildInfoInitializer(),

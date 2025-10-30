@@ -16,7 +16,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.time.Instant;
 import java.util.List;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "ClassCanBeRecord"})
 public final class ClasspathFileSystem implements FileSystem {
     private final ClassLoader loader;
     private final String root;

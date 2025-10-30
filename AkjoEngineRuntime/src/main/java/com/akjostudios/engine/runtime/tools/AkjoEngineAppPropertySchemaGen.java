@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class AkjoEngineAppPropertySchemaGen {
-    public static void main(String[] args) throws Exception {
+    static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new IllegalArgumentException("Expected target directory path!");
         }
