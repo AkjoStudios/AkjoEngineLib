@@ -1,6 +1,7 @@
 package com.akjostudios.engine.runtime.impl;
 
 import com.akjostudios.engine.api.IAkjoApplicationContext;
+import com.akjostudios.engine.api.context.Component;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.DEFAULT_MAIN_THREAD_NAME;
 import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.MAIN_THREAD_NAME;
 
+@Component
 public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private static final String DEFAULT_BASE_LOGGER_NAME = "app";
 

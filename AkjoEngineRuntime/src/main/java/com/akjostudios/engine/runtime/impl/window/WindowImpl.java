@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.*;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
@@ -38,6 +40,8 @@ public final class WindowImpl implements Window {
     private final AtomicReference<GLFWWindowIconifyCallback> iconifyCallback = new AtomicReference<>();
     private final AtomicReference<GLFWWindowMaximizeCallback> maximizeCallback = new AtomicReference<>();
     private final AtomicReference<GLFWWindowContentScaleCallback> contentScaleCallback = new AtomicReference<>();
+
+    private GLCapabilities capabilities;
 
     public WindowImpl(long handle, @NotNull FrameScheduler renderScheduler, @NotNull EventBus events) {
         this.handle = handle;
@@ -629,6 +633,11 @@ public final class WindowImpl implements Window {
         }
 
         GLFW.glfwMakeContextCurrent(handle);
+        if (capabilities == null) {
+            capabilities = GL.createCapabilities();
+        } else {
+            GL.setCapabilities(capabilities);
+        }
         events.publish(new WindowBeforeSwapBuffersEvent(this));
 
         GLFW.glfwSwapBuffers(handle);
@@ -650,6 +659,10 @@ public final class WindowImpl implements Window {
             throw new IllegalStateException("❗ A window must be destroyed on the render thread!");
         }
 
+        GLFW.glfwMakeContextCurrent(handle);
+        if (capabilities != null) {
+            GL.setCapabilities(capabilities);
+        }
         GLFW.glfwDestroyWindow(handle);
 
         if (this.posCallback.get() != null) {
