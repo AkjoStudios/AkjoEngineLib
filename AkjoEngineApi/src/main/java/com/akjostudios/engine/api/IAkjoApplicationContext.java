@@ -4,6 +4,7 @@ import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.monitor.MonitorRegistry;
+import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
@@ -20,6 +21,7 @@ public interface IAkjoApplicationContext {
     @NotNull Time time();
     @NotNull EventBus events();
     @NotNull MountableFileSystem fs();
+    @NotNull AssetManager assets();
     @NotNull MonitorRegistry monitors();
     @NotNull WindowRegistry windows();
 
@@ -94,6 +96,17 @@ public interface IAkjoApplicationContext {
     void __engine_setFileSystem(
             @NotNull Object token,
             @NotNull MountableFileSystem fs
+    ) throws IllegalCallerException, IllegalStateException;
+
+    /**
+     * Sets the internal asset manager for this application
+     * @apiNote  Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    void __engine_setAssetManager(
+            @NotNull Object token,
+            @NotNull AssetManager assets
     ) throws IllegalCallerException, IllegalStateException;
 
     /**

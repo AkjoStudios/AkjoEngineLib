@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Consumer;
 
 @RequiredArgsConstructor
-@SuppressWarnings("ClassCanBeRecord")
 public final class AkjoEngineExceptionHandler implements Thread.UncaughtExceptionHandler {
     @NotNull private final Logger logger;
     @NotNull private final String appName;
@@ -37,7 +36,7 @@ public final class AkjoEngineExceptionHandler implements Thread.UncaughtExceptio
         try { shutdownSignal.accept(thread); } catch (Exception ignored) {}
     }
 
-    private static String deriveRole(@NotNull Thread thread) {
+    private static @NotNull String deriveRole(@NotNull Thread thread) {
         String name = thread.getName();
         if (name.startsWith("Runtime") || name.startsWith("main")) { return "runtime"; }
         if (name.startsWith("Render")) { return "render"; }

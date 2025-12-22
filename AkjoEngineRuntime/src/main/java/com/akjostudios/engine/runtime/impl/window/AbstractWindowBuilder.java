@@ -9,6 +9,7 @@ import com.akjostudios.engine.api.window.WindowVisibility;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL;
 
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
@@ -61,6 +62,7 @@ public abstract class AbstractWindowBuilder {
 
     private @NotNull Window makeContextCurrent(long handle) {
         GLFW.glfwMakeContextCurrent(handle);
+        GL.createCapabilities();
         GLFW.glfwSwapInterval(vsync ? 1 : 0);
         return new WindowImpl(handle, renderScheduler, events);
     }

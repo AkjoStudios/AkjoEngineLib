@@ -22,10 +22,13 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.time;
     exports com.akjostudios.engine.api.event;
     exports com.akjostudios.engine.api.resource.file;
+    exports com.akjostudios.engine.api.resource.asset;
 
     exports com.akjostudios.engine.api.monitor;
     exports com.akjostudios.engine.api.monitor.events;
     exports com.akjostudios.engine.api.window;
     exports com.akjostudios.engine.api.window.builder;
     exports com.akjostudios.engine.api.window.events;
+
+    exports com.akjostudios.engine.api.assets;
 }

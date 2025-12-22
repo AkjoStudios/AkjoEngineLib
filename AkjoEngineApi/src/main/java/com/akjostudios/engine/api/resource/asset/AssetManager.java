@@ -1,14 +1,32 @@
 package com.akjostudios.engine.api.resource.asset;
 
+import com.akjostudios.engine.api.resource.file.ResourcePath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
-@SuppressWarnings({"unused", "UnusedReturnValue"})
+@SuppressWarnings("unused")
 public interface AssetManager {
-    <T> @NotNull AssetHandle<T> load(@NotNull AssetKey<T> key);
-    <T> @NotNull Optional<T> getWhenLoaded(@NotNull AssetKey<T> key);
-    boolean isLoaded(@NotNull AssetKey<?> key);
-    void unload(@NotNull AssetKey<?> key);
-    void flush();
+    /**
+     * Synchronously retrieves an asset. If not loaded, it blocks the current thread until loaded.
+     * @apiNote Not recommended for gameplay, only useful for initialization or loading screens.
+     */
+    @NotNull <T extends Asset> T load(@NotNull ResourcePath path, @NotNull Class<T> type);
+
+    /**
+     * Asynchronously loads an asset.
+     * @return A future that completes when the asset is ready.
+     */
+    @NotNull <T extends Asset>CompletableFuture<T> loadAsync(@NotNull ResourcePath path, @NotNull Class<T> type);
+
+    /**
+     * @return The asset if it is already loaded and cached, otherwise null.
+     */
+    @Nullable <T extends Asset> T get(@NotNull ResourcePath path);
+
+    /**
+     * Unloads the asset and disposes it (freeing memory).
+     */
+    void unload(@NotNull ResourcePath path);
 }

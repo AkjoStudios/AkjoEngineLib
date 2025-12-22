@@ -18,7 +18,6 @@ import com.akjostudios.engine.api.window.events.WindowDestroyedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL;
 
 import java.util.List;
 import java.util.Objects;
@@ -120,6 +119,7 @@ public final class WindowRegistryImpl implements WindowRegistry {
                 token, () -> {
                     if (GLFW.glfwInit()) {
                         windows.forEach(window -> {
+                            GLFW.glfwMakeContextCurrent(window.handle());
                             window.__engine_swapBuffers(token);
                             if (window.shouldClose()) {
                                 window.__engine_destroy(token);
@@ -137,11 +137,6 @@ public final class WindowRegistryImpl implements WindowRegistry {
                     }
                 }
         );
-
-        windows.forEach(window -> {
-            GLFW.glfwMakeContextCurrent(window.handle());
-            GL.createCapabilities();
-        });
 
         this.renderScheduler.set(renderScheduler);
         this.events.set(events);

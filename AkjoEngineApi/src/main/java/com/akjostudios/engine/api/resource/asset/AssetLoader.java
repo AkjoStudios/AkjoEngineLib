@@ -4,20 +4,19 @@ import com.akjostudios.engine.api.resource.file.FileSystem;
 import com.akjostudios.engine.api.resource.file.ResourcePath;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
+public interface AssetLoader<T extends Asset, D> {
+    /**
+     * Reads the necessary data from the virtual file system and decodes that data into RAM.
+     * @implNote This executes on a worker thread.
+     * @return The intermediate data (for example a ByteBuffer containing raw pixels).
+     */
+    @NotNull D loadRaw(@NotNull ResourcePath path, @NotNull FileSystem fs) throws Exception;
 
-@SuppressWarnings({"unused", "UnusedReturnValue"})
-public interface AssetLoader<I> {
-    boolean supports(
-            @NotNull ResourcePath path,
-            @NotNull Map<String, Object> params
-    );
-
-    @NotNull Optional<I> load(
-            @NotNull FileSystem fs,
-            @NotNull ResourcePath path,
-            @NotNull Map<String, Object> params
-    ) throws IOException;
+    /**
+     * Takes the intermediate data and creates the usable asset object for the given library (for example OpenGL).
+     * @param data The data returned from {@link AssetLoader#loadRaw(ResourcePath, FileSystem)}
+     * @implNote This executes on the render thread.
+     * @return The final usable asset object.
+     */
+    @NotNull T createAsset(@NotNull ResourcePath path, @NotNull D data);
 }

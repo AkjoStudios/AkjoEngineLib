@@ -2,6 +2,8 @@ package com.akjostudios.engine.runtime;
 
 import com.akjostudios.engine.api.AkjoApplication;
 import com.akjostudios.engine.api.IAkjoApplication;
+import com.akjostudios.engine.api.assets.Texture;
+import com.akjostudios.engine.api.common.Disposable;
 import com.akjostudios.engine.api.common.mailbox.Mailbox;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.logging.Logger;
@@ -9,9 +11,11 @@ import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.runtime.components.EventListenerRegistrar;
 import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
+import com.akjostudios.engine.runtime.impl.assets.texture.TextureLoader;
 import com.akjostudios.engine.runtime.impl.event.EventBusImpl;
 import com.akjostudios.engine.runtime.impl.lifecycle.LifecycleImpl;
 import com.akjostudios.engine.runtime.impl.monitor.MonitorRegistryImpl;
+import com.akjostudios.engine.runtime.impl.resource.asset.AssetManagerImpl;
 import com.akjostudios.engine.runtime.impl.resource.file.ClasspathFileSystem;
 import com.akjostudios.engine.runtime.impl.resource.file.RouterFileSystem;
 import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
@@ -107,18 +111,20 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             ThreadingImpl threading = new ThreadingImpl(time, renderMailbox, logicMailbox, audioMailbox);
             context.__engine_setThreading(EngineTokens.token(), threading);
 
+            Thread.UncaughtExceptionHandler exceptionHandler = new AkjoEngineExceptionHandler(
+                    context.logger(CRASH_LOGGER_NAME),
+                    properties.appName(),
+                    properties.appVersion(),
+                    systemProperties.get(ENGINE_VERSION_PROPERTY).toString(),
+                    thread -> {
+                        thread.interrupt();
+                        this.safeStop();
+                    }
+            );
+
             context.threading().__engine_init(
                     EngineTokens.token(),
-                    new AkjoEngineExceptionHandler(
-                            context.logger(CRASH_LOGGER_NAME),
-                            properties.appName(),
-                            properties.appVersion(),
-                            systemProperties.get(ENGINE_VERSION_PROPERTY).toString(),
-                            thread -> {
-                                thread.interrupt();
-                                this.safeStop();
-                            }
-                    ),
+                    exceptionHandler,
                     context.logger(THREADING_LOGGER_NAME)
             );
 
@@ -165,7 +171,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     }
             ));
 
-            // Initialize resource system
+            // Initialize asset system
             context.__engine_setFileSystem(
                     EngineTokens.token(),
                     new RouterFileSystem()
@@ -175,6 +181,19 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     application.getClass().getClassLoader(),
                     ASSETS_PATH
             ), ROOT_BASE_PATH);
+
+            AssetManagerImpl assetManager = new AssetManagerImpl(
+                    context.fs(),
+                    context.scheduler(),
+                    exceptionHandler
+            );
+
+            assetManager.registerLoader(Texture.class, new TextureLoader());
+
+            context.__engine_setAssetManager(
+                    EngineTokens.token(),
+                    assetManager
+            );
 
             // Set monitor registry object
             context.__engine_setMonitors(
@@ -212,7 +231,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 }
 
                 // Initialize GLFW
-                glfwErrorCallback.set(GLFWErrorCallback.create((code, message) -> log.error(
+                glfwErrorCallback.set(GLFWErrorCallback.create((code, _) -> log.error(
                         "GLFW Error ({}): {}",
                         code, GLFWErrorCallback.getDescription(code)
                 )));
@@ -292,6 +311,11 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             context.threading().__engine_stop(
                     EngineTokens.token(),
                     () -> {
+                        // Dispose all assets
+                        if (context.assets() instanceof Disposable disposable) {
+                            disposable.dispose();
+                        }
+
                         // Stop window registry
                         context.windows().__engine_stop(EngineTokens.token());
 

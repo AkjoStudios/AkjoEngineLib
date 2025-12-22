@@ -46,7 +46,10 @@ public final class MonitorImpl implements Monitor {
     }
 
     private @NotNull String queryName() {
-        String name = GLFW.glfwGetMonitorName(handle);
+        String name = null;
+        try {
+            name = GLFW.glfwGetMonitorName(handle);
+        } catch (Exception _) {}
         return name == null ? "Unknown" : name;
     }
 
@@ -62,6 +65,8 @@ public final class MonitorImpl implements Monitor {
             IntBuffer py = stack.mallocInt(1);
             GLFW.glfwGetMonitorPos(handle, px, py);
             return new ScreenPosition(px.get(0), py.get(0));
+        } catch (Exception _) {
+            return new ScreenPosition(0, 0);
         }
     }
 
@@ -72,7 +77,10 @@ public final class MonitorImpl implements Monitor {
     }
 
     private @NotNull MonitorResolution queryResolution() {
-        GLFWVidMode vidmode = GLFW.glfwGetVideoMode(handle);
+        GLFWVidMode vidmode = null;
+        try {
+            vidmode = GLFW.glfwGetVideoMode(handle);
+        } catch (Exception _) {}
         if (vidmode == null) {
             return new MonitorResolution(0, 0);
         }
@@ -86,7 +94,10 @@ public final class MonitorImpl implements Monitor {
     }
 
     private int queryRefreshRate() {
-        GLFWVidMode vidmode = GLFW.glfwGetVideoMode(handle);
+        GLFWVidMode vidmode = null;
+        try {
+            vidmode = GLFW.glfwGetVideoMode(handle);
+        } catch (Exception _) {}
         if (vidmode == null) {
             return 0;
         }
@@ -108,6 +119,8 @@ public final class MonitorImpl implements Monitor {
                 return null;
             }
             return new MonitorSize(pwidth.get(0), pheight.get(0));
+        } catch (Exception _) {
+            return new MonitorSize(0, 0);
         }
     }
 
@@ -126,6 +139,8 @@ public final class MonitorImpl implements Monitor {
                 return null;
             }
             return new MonitorContentScale(pscaleX.get(0), pscaleY.get(0));
+        } catch (Exception _) {
+            return new MonitorContentScale(0, 0);
         }
     }
 
@@ -146,6 +161,11 @@ public final class MonitorImpl implements Monitor {
                 return null;
             }
             return new MonitorWorkArea(new ScreenPosition(px.get(0), py.get(0)), new MonitorResolution(pwidth.get(0), pheight.get(0)));
+        } catch (Exception _) {
+            return new MonitorWorkArea(
+                    new ScreenPosition(0, 0),
+                    new MonitorResolution(0, 0)
+            );
         }
     }
 

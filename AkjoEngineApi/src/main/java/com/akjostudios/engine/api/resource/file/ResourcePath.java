@@ -1,11 +1,12 @@
 package com.akjostudios.engine.api.resource.file;
 
+import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public record ResourcePath(
         @NotNull Scheme scheme,
-        @NotNull String path
+        @NotNull @Pattern("(([a-zA-Z]:[/\\\\]|\\\\\\\\)([0-9a-zA-Z_\\-. ]+[/\\\\]?)*)|([0-9a-zA-Z_\\-\\\\/.][0-9a-zA-Z_\\-\\\\/. ]*)|(^$)") String path
 ) {
     @Override
     public @NotNull String toString() { return scheme.name().toLowerCase() + "://" + path; }

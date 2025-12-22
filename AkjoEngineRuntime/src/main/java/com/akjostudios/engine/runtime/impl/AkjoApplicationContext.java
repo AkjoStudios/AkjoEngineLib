@@ -6,6 +6,7 @@ import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.monitor.MonitorRegistry;
+import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.api.threading.Threading;
@@ -32,6 +33,7 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
     private Time time;
     private EventBus events;
     private MountableFileSystem fs;
+    private AssetManager assets;
     private MonitorRegistry monitors;
     private WindowRegistry windows;
 
@@ -96,6 +98,14 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ File system object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         return fs;
+    }
+
+    @Override
+    public @NotNull AssetManager assets() {
+        if (assets == null) {
+            throw new IllegalStateException("❗ Asset manager object was requested before it exists! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        return assets;
     }
 
     @Override
@@ -220,6 +230,24 @@ public final class AkjoApplicationContext implements IAkjoApplicationContext {
             throw new IllegalStateException("❗ File system object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
         }
         this.fs = fs;
+    }
+
+    /**
+     * Sets the internal asset manager for this application
+     * @apiNote  Must be called by the runtime implementation of the engine AND from the main thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the main thread.
+     */
+    @Override
+    public void __engine_setAssetManager(
+            @NotNull Object token,
+            @NotNull AssetManager assets
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), MAIN_THREAD_NAME)) {
+            throw new IllegalStateException("❗ Asset manager object set outside of main thread! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        this.assets = assets;
     }
 
     /**

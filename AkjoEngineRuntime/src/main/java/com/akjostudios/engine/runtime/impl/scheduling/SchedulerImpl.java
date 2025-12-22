@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 @Accessors(fluent = true)
 @RequiredArgsConstructor
-@SuppressWarnings("ClassCanBeRecord")
 public final class SchedulerImpl implements Scheduler {
     private final ScheduledExecutorService timer;
     private final Mailbox logicMailbox;

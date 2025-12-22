@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.function.Supplier;
 
-@SuppressWarnings("ClassCanBeRecord")
 public final class LoggerImpl implements Logger {
     public static final String RUNTIME_LOGGER_NAME = "engine.runtime";
     public static final String CRASH_LOGGER_NAME = "engine.crash";

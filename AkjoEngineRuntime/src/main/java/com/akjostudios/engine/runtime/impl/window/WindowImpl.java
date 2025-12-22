@@ -99,6 +99,8 @@ public final class WindowImpl implements Window {
             IntBuffer py = stack.mallocInt(1);
             GLFW.glfwGetWindowPos(handle, px, py);
             return new ScreenPosition(px.get(0), py.get(0));
+        } catch (Exception _) {
+            return new ScreenPosition(0, 0);
         }
     }
 
@@ -247,6 +249,8 @@ public final class WindowImpl implements Window {
             IntBuffer pheight = stack.mallocInt(1);
             GLFW.glfwGetWindowSize(handle, pwidth, pheight);
             return new WindowResolution(pwidth.get(0), pheight.get(0));
+        } catch (Exception _) {
+            return new WindowResolution(0, 0);
         }
     }
 
@@ -277,6 +281,8 @@ public final class WindowImpl implements Window {
                 return null;
             }
             return new WindowContentScale(pscaleX.get(0), pscaleY.get(0));
+        } catch (Exception _) {
+            return new WindowContentScale(0, 0);
         }
     }
 
@@ -428,7 +434,7 @@ public final class WindowImpl implements Window {
     }
 
     private void init() {
-        this.posCallback.set(GLFWWindowPosCallback.create((window, x, y) -> {
+        this.posCallback.set(GLFWWindowPosCallback.create((_, x, y) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     current.name(), new ScreenPosition(x, y), current.monitor(), current.resolution(),
                     current.scale(), current.visibility(), current.options(),
@@ -441,7 +447,7 @@ public final class WindowImpl implements Window {
             )));
         }));
         GLFW.glfwSetWindowPosCallback(handle, this.posCallback.get());
-        this.sizeCallback.set(GLFWWindowSizeCallback.create((window, width, height) -> {
+        this.sizeCallback.set(GLFWWindowSizeCallback.create((_, width, height) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), new WindowResolution(width, height),
                     current.scale(), current.visibility(), current.options(),
@@ -452,14 +458,14 @@ public final class WindowImpl implements Window {
         }));
         GLFW.glfwSetWindowSizeCallback(handle, this.sizeCallback.get());
         this.closeCallback.set(GLFWWindowCloseCallback.create(
-                (window) -> events.publish(new WindowCloseRequestedEvent(this))
+                (_) -> events.publish(new WindowCloseRequestedEvent(this))
         ));
         GLFW.glfwSetWindowCloseCallback(handle, this.closeCallback.get());
-        this.refreshCallback.set(GLFWWindowRefreshCallback.create((window) -> {
+        this.refreshCallback.set(GLFWWindowRefreshCallback.create((_) -> {
             // TODO: Call draw method when it exists
         }));
         GLFW.glfwSetWindowRefreshCallback(handle, this.refreshCallback.get());
-        this.focusCallback.set(GLFWWindowFocusCallback.create((window, focused) -> {
+        this.focusCallback.set(GLFWWindowFocusCallback.create((_, focused) -> {
             state.updateAndGet(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), current.resolution(),
                     current.scale(), current.visibility(), current.options(),
@@ -469,7 +475,7 @@ public final class WindowImpl implements Window {
             else { events.publish(new WindowFocusLostEvent(this)); }
         }));
         GLFW.glfwSetWindowFocusCallback(handle, this.focusCallback.get());
-        this.iconifyCallback.set(GLFWWindowIconifyCallback.create((window, iconified) -> {
+        this.iconifyCallback.set(GLFWWindowIconifyCallback.create((_, iconified) -> {
             state.updateAndGet(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), current.resolution(),
                     current.scale(), new WindowVisibility(
@@ -481,7 +487,7 @@ public final class WindowImpl implements Window {
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
         GLFW.glfwSetWindowIconifyCallback(handle, this.iconifyCallback.get());
-        this.maximizeCallback.set(GLFWWindowMaximizeCallback.create((window, maximized) -> {
+        this.maximizeCallback.set(GLFWWindowMaximizeCallback.create((_, maximized) -> {
             state.updateAndGet(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), current.resolution(),
                     current.scale(), new WindowVisibility(
@@ -493,7 +499,7 @@ public final class WindowImpl implements Window {
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
         GLFW.glfwSetWindowMaximizeCallback(handle, this.maximizeCallback.get());
-        this.contentScaleCallback.set(GLFWWindowContentScaleCallback.create((window, scaleX, scaleY) -> {
+        this.contentScaleCallback.set(GLFWWindowContentScaleCallback.create((_, scaleX, scaleY) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), current.resolution(),
                     new WindowContentScale(scaleX, scaleY), current.visibility(), current.options(),

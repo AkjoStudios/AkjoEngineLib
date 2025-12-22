@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonWritableChannelException;
@@ -16,7 +17,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.time.Instant;
 import java.util.List;
 
-@SuppressWarnings({"unused", "ClassCanBeRecord"})
+@SuppressWarnings({"unused"})
 public final class ClasspathFileSystem implements FileSystem {
     private final ClassLoader loader;
     private final String root;
@@ -27,15 +28,14 @@ public final class ClasspathFileSystem implements FileSystem {
     }
 
     @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public @NotNull SeekableByteChannel open(@NotNull ResourcePath path) throws IOException {
         URL url = getPath(path);
         if (url == null) { throw new FileNotFoundException(path.toString()); }
 
         try (InputStream stream = url.openStream()) {
-            ByteBuffer buffer = ByteBuffer.allocate(stream.available());
-            stream.read(buffer.array());
-            buffer.flip();
+            byte[] bytes = stream.readAllBytes();
+            ByteBuffer buffer = ByteBuffer.wrap(bytes);
+
             return new ReadOnlyMemoryChannel(buffer);
         }
     }
@@ -59,8 +59,15 @@ public final class ClasspathFileSystem implements FileSystem {
         URL url = getPath(path);
         if (url == null) { return -1L; }
 
-        try (InputStream stream = url.openStream()) {
-            return stream.available();
+        try {
+            URLConnection conn = url.openConnection();
+            long len = conn.getContentLengthLong();
+            if (len == -1) {
+                try (InputStream is = conn.getInputStream()) {
+                    return is.readAllBytes().length;
+                }
+            }
+            return len;
         } catch (IOException e) {
             return -1L;
         }
