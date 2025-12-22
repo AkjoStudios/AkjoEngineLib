@@ -34,6 +34,7 @@ public class AkjoEngineBootstrap {
     );
 
     static void main(String[] args) {
+        Thread.currentThread().setName("Main");
         new SpringApplicationBuilder(AkjoEngineConfig.class).initializers(
                 new AkjoEnginePropertyInitializer(),
                 new AkjoEngineBuildInfoInitializer(),

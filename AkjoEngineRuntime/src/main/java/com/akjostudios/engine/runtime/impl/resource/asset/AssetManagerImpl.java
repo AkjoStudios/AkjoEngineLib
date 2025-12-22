@@ -1,5 +1,8 @@
 package com.akjostudios.engine.runtime.impl.resource.asset;
 
+import com.akjostudios.engine.api.assets.Shader;
+import com.akjostudios.engine.api.assets.Text;
+import com.akjostudios.engine.api.assets.Texture;
 import com.akjostudios.engine.api.common.Disposable;
 import com.akjostudios.engine.api.resource.asset.Asset;
 import com.akjostudios.engine.api.resource.asset.AssetLoader;
@@ -7,6 +10,10 @@ import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.resource.file.FileSystem;
 import com.akjostudios.engine.api.resource.file.ResourcePath;
 import com.akjostudios.engine.api.scheduling.Scheduler;
+import com.akjostudios.engine.res.EngineResources;
+import com.akjostudios.engine.runtime.impl.assets.shader.ShaderLoader;
+import com.akjostudios.engine.runtime.impl.assets.text.TextLoader;
+import com.akjostudios.engine.runtime.impl.assets.texture.TextureLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +47,13 @@ public final class AssetManagerImpl implements AssetManager, Disposable {
         );
     }
 
-    public <T extends Asset, D> void registerLoader(@NotNull Class<T> type, @NotNull AssetLoader<T, D> loader) {
+    public void setup() {
+        registerLoader(Text.class, new TextLoader());
+        registerLoader(Texture.class, new TextureLoader());
+        registerLoader(Shader.class, new ShaderLoader());
+    }
+
+    private <T extends Asset, D> void registerLoader(@NotNull Class<T> type, @NotNull AssetLoader<T, D> loader) {
         loaders.put(type, loader);
     }
 
@@ -53,7 +66,9 @@ public final class AssetManagerImpl implements AssetManager, Disposable {
 
         AssetLoader<T, Object> loader = (AssetLoader<T, Object>) loaders.get(type);
         if (loader == null) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("No loader for asset type \"" + type.getSimpleName() + "\"!"));
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException("❗ No loader for asset type \"" + type.getSimpleName() + "\"! This is likely a bug in the engine - please report it using the issue tracker.")
+            );
         }
 
         CompletableFuture<T> future = new CompletableFuture<>();
@@ -80,6 +95,11 @@ public final class AssetManagerImpl implements AssetManager, Disposable {
     }
 
     @Override
+    public @NotNull <T extends Asset> CompletableFuture<T> loadAsync(@NotNull EngineResources<T> resource) {
+        return loadAsync(resource.path(), resource.type());
+    }
+
+    @Override
     public @NotNull <T extends Asset> T load(@NotNull ResourcePath path, @NotNull Class<T> type) {
         try {
             return loadAsync(path, type).join();
@@ -89,6 +109,11 @@ public final class AssetManagerImpl implements AssetManager, Disposable {
             }
             throw new RuntimeException("Failed to load asset at path \"" + path + "\"!", e.getCause());
         }
+    }
+
+    @Override
+    public @NotNull <T extends Asset> T load(@NotNull EngineResources<T> resource) {
+        return load(resource.path(), resource.type());
     }
 
     @Override

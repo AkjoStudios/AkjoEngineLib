@@ -31,7 +31,7 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
 
     @Override
     public @NotNull WindowedWindowBuilder resolution(@NotNull WindowResolution resolution) {
-        this.resolution = monitor -> resolution;
+        this.resolution = _ -> resolution;
         return this;
     }
 
@@ -43,7 +43,7 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
 
     @Override
     public @NotNull WindowedWindowBuilder position(@NotNull ScreenPosition position) {
-        this.position = (monitor, resolution) -> new MonitorPosition(
+        this.position = (monitor, _) -> new MonitorPosition(
                 monitor,
                 Math.subtractExact(position.x(), monitor.position().x()),
                 Math.subtractExact(position.y(), monitor.position().y())
@@ -53,7 +53,7 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
 
     @Override
     public @NotNull WindowedWindowBuilder position(@NotNull MonitorPosition position) {
-        this.position = (monitor, resolution) -> position;
+        this.position = (_, _) -> position;
         return this;
     }
 
@@ -89,6 +89,9 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
         }
         if (hook == null) {
             throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine - please report it using the issue tracker.");
+        }
+        if (!GLFW.glfwInit()) {
+            throw new IllegalStateException("❗ Cannot build window without GLFW being initialized!");
         }
 
         final WindowResolution finalResolution = resolution.retrieve(monitor);

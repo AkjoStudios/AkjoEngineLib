@@ -70,19 +70,26 @@ public final class WindowImpl implements Window {
     }
 
     private @NotNull String queryName() {
-        String name = GLFW.glfwGetWindowTitle(handle);
+        String name = null;
+        try {
+            name = GLFW.glfwGetWindowTitle(handle);
+        } catch (Exception _) {}
         return name == null ? "Unknown" : name;
     }
 
     @Override
     public void name(@NotNull String name) {
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             GLFW.glfwSetWindowTitle(handle, name);
+
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     name, current.position(), current.monitor(), current.resolution(),
                     current.scale(), current.visibility(), current.options(),
                     current.focused(), current.requestedAttention()
             ));
+
             events.publish(new WindowTitleChangedEvent(this, previous.name()));
         });
     }
@@ -97,7 +104,9 @@ public final class WindowImpl implements Window {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer px = stack.mallocInt(1);
             IntBuffer py = stack.mallocInt(1);
+
             GLFW.glfwGetWindowPos(handle, px, py);
+
             return new ScreenPosition(px.get(0), py.get(0));
         } catch (Exception _) {
             return new ScreenPosition(0, 0);
@@ -113,12 +122,19 @@ public final class WindowImpl implements Window {
         ) { throw new IllegalArgumentException("❗ Window position must be within the range of an integer!"); }
 
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             GLFW.glfwSetWindowPos(handle, (int) position.x(), (int) position.y());
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), position, current.monitor(), current.resolution(),
-                    current.scale(), current.visibility(), current.options(),
-                    current.focused(), current.requestedAttention()
-            ));
+
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), position, current.monitor(), current.resolution(),
+                        current.scale(), current.visibility(), current.options(),
+                        current.focused(), current.requestedAttention()
+                );
+            });
         });
     }
 
@@ -136,6 +152,8 @@ public final class WindowImpl implements Window {
         ) { throw new IllegalArgumentException("❗ Window position must be within the range of an integer!"); }
 
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             ScreenPosition monitorPosition = position.monitor().position();
 
             int newX = Math.toIntExact(monitorPosition.x() + position.x());
@@ -143,11 +161,16 @@ public final class WindowImpl implements Window {
             ScreenPosition windowPosition = new ScreenPosition(newX, newY);
 
             GLFW.glfwSetWindowPos(handle, newX, newY);
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), windowPosition, current.monitor(), current.resolution(),
-                    current.scale(), current.visibility(), current.options(),
-                    current.focused(), current.requestedAttention()
-            ));
+
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), windowPosition, current.monitor(), current.resolution(),
+                        current.scale(), current.visibility(), current.options(),
+                        current.focused(), current.requestedAttention()
+                );
+            });
         });
     }
 
@@ -178,6 +201,7 @@ public final class WindowImpl implements Window {
             IntBuffer windowY = stack.mallocInt(1);
             IntBuffer windowWidth = stack.mallocInt(1);
             IntBuffer windowHeight = stack.mallocInt(1);
+
             GLFW.glfwGetWindowPos(handle, windowX, windowY);
             GLFW.glfwGetWindowSize(handle, windowWidth, windowHeight);
 
@@ -193,6 +217,7 @@ public final class WindowImpl implements Window {
                     IntBuffer monitorY = stack.mallocInt(1);
                     IntBuffer monitorWidth = stack.mallocInt(1);
                     IntBuffer monitorHeight = stack.mallocInt(1);
+
                     GLFW.glfwGetMonitorWorkarea(monitor, monitorX, monitorY, monitorWidth, monitorHeight);
 
                     if (monitorWidth.get(0) == 0 || monitorHeight.get(0) == 0) {
@@ -205,6 +230,7 @@ public final class WindowImpl implements Window {
                     int areaY1 = Math.max(windowY.get(0), monitorY.get(0));
                     int areaX2 = Math.min(windowX.get(0) + windowWidth.get(0), monitorX.get(0) + monitorWidth.get(0));
                     int areaY2 = Math.min(windowY.get(0) + windowHeight.get(0), monitorY.get(0) + monitorHeight.get(0));
+
                     int area = Math.max(0, (areaX2 - areaX1) * (areaY2 - areaY1));
                     if (area > bestArea) {
                         bestArea = area;
@@ -216,14 +242,20 @@ public final class WindowImpl implements Window {
             if (bestMonitor == 0L) { bestMonitor = GLFW.glfwGetPrimaryMonitor(); }
 
             return new MonitorImpl(bestMonitor, renderScheduler);
+        } catch (Exception _) {
+            return new MonitorImpl(-1L, renderScheduler);
         }
     }
 
     private void updateMonitor() {
         Monitor newMonitor = queryMonitor();
+
         state.updateAndGet(current -> {
+            if (current == null) { return null; }
             if (current.monitor().handle() == newMonitor.handle()) { return current; }
+
             events.publish(new WindowMonitorChangedEvent(this, current.monitor()));
+
             return new WindowState(
                     current.name(), current.position(), newMonitor, current.resolution(),
                     current.scale(), current.visibility(), current.options(),
@@ -247,7 +279,9 @@ public final class WindowImpl implements Window {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pwidth = stack.mallocInt(1);
             IntBuffer pheight = stack.mallocInt(1);
+
             GLFW.glfwGetWindowSize(handle, pwidth, pheight);
+
             return new WindowResolution(pwidth.get(0), pheight.get(0));
         } catch (Exception _) {
             return new WindowResolution(0, 0);
@@ -257,12 +291,18 @@ public final class WindowImpl implements Window {
     @Override
     public void resolution(@NotNull WindowResolution resolution) {
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             GLFW.glfwSetWindowSize(handle, resolution.width(), resolution.height());
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), resolution,
-                    current.scale(), current.visibility(), current.options(),
-                    current.focused(), current.requestedAttention()
-            ));
+
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+                return new WindowState(
+                        current.name(), current.position(), current.monitor(), resolution,
+                        current.scale(), current.visibility(), current.options(),
+                        current.focused(), current.requestedAttention()
+                );
+            });
         });
     }
 
@@ -276,10 +316,13 @@ public final class WindowImpl implements Window {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer pscaleX = stack.mallocFloat(1);
             FloatBuffer pscaleY = stack.mallocFloat(1);
+
             GLFW.glfwGetWindowContentScale(handle, pscaleX, pscaleY);
+
             if (pscaleX.get(0) == 0 || pscaleY.get(0) == 0) {
                 return null;
             }
+
             return new WindowContentScale(pscaleX.get(0), pscaleY.get(0));
         } catch (Exception _) {
             return new WindowContentScale(0, 0);
@@ -293,20 +336,26 @@ public final class WindowImpl implements Window {
     }
 
     private @NotNull WindowVisibility queryVisibility() {
-        boolean minimized = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE;
-        boolean maximized = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_MAXIMIZED) == GLFW.GLFW_TRUE;
-        boolean visible = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_VISIBLE) == GLFW.GLFW_TRUE;
+        try {
+            boolean minimized = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_ICONIFIED) == GLFW.GLFW_TRUE;
+            boolean maximized = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_MAXIMIZED) == GLFW.GLFW_TRUE;
+            boolean visible = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_VISIBLE) == GLFW.GLFW_TRUE;
 
-        WindowVisibility.Type type = WindowVisibility.Type.REGULAR;
-        if (minimized) { type = WindowVisibility.Type.MINIMIZED; }
-        if (maximized) { type = WindowVisibility.Type.MAXIMIZED; }
+            WindowVisibility.Type type = WindowVisibility.Type.REGULAR;
+            if (minimized) { type = WindowVisibility.Type.MINIMIZED; }
+            if (maximized) { type = WindowVisibility.Type.MAXIMIZED; }
 
-        return new WindowVisibility(type, visible);
+            return new WindowVisibility(type, visible);
+        } catch (Exception _) {
+            return new WindowVisibility(WindowVisibility.Type.REGULAR, false);
+        }
     }
 
     @Override
     public void visibility(@NotNull WindowVisibility visibility) {
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             boolean wantVisible = visibility.visible();
             WindowVisibility.Type type = visibility.type();
 
@@ -342,11 +391,15 @@ public final class WindowImpl implements Window {
                 }
             }
 
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
-                    current.scale(), visibility, current.options(),
-                    current.focused(), current.requestedAttention()
-            ));
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.scale(), visibility, current.options(),
+                        current.focused(), current.requestedAttention()
+                );
+            });
         });
     }
 
@@ -357,16 +410,22 @@ public final class WindowImpl implements Window {
     }
 
     private @NotNull WindowOptions queryOptions() {
-        boolean isResizable = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_RESIZABLE) == GLFW.GLFW_TRUE;
-        boolean isDecorated = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_DECORATED) == GLFW.GLFW_TRUE;
-        boolean isFloating = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_FLOATING) == GLFW.GLFW_TRUE;
+        try {
+            boolean isResizable = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_RESIZABLE) == GLFW.GLFW_TRUE;
+            boolean isDecorated = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_DECORATED) == GLFW.GLFW_TRUE;
+            boolean isFloating = GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_FLOATING) == GLFW.GLFW_TRUE;
 
-        return new WindowOptions(isResizable, isDecorated, isFloating);
+            return new WindowOptions(isResizable, isDecorated, isFloating);
+        } catch (Exception _) {
+            return new WindowOptions(false, false, false);
+        }
     }
 
     @Override
     public void resizable(boolean resizable) {
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             GLFW.glfwSetWindowAttrib(handle, GLFW.GLFW_RESIZABLE, resizable ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), current.resolution(),
@@ -374,6 +433,7 @@ public final class WindowImpl implements Window {
                             resizable, current.options().decorated(), current.options().floating()
                     ), current.focused(), current.requestedAttention()
             ));
+
             events.publish(new WindowOptionsChangedEvent(this, previous.options()));
         });
     }
@@ -385,31 +445,49 @@ public final class WindowImpl implements Window {
     }
 
     private boolean queryFocused() {
-        return GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_FOCUSED) == GLFW.GLFW_TRUE;
+        try {
+            return GLFW.glfwGetWindowAttrib(handle, GLFW.GLFW_FOCUSED) == GLFW.GLFW_TRUE;
+        } catch (Exception _) {
+            return false;
+        }
     }
 
     @Override
     public void focus() {
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
             if (focused()) { return; }
+
             GLFW.glfwFocusWindow(handle);
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
-                    current.scale(), current.visibility(), current.options(),
-                    true, false
-            ));
+
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.scale(), current.visibility(), current.options(),
+                        true, false
+                );
+            });
         });
     }
 
     @Override
     public void requestAttention() {
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             GLFW.glfwRequestWindowAttention(handle);
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
-                    current.scale(), current.visibility(), current.options(),
-                    current.focused(), true
-            ));
+
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.scale(), current.visibility(), current.options(),
+                        current.focused(), true
+                );
+            });
         });
     }
 
@@ -418,7 +496,10 @@ public final class WindowImpl implements Window {
 
     @Override
     public void close() {
-        GLFW.glfwSetWindowShouldClose(handle, true);
+        if (GLFW.glfwInit()) {
+            GLFW.glfwSetWindowShouldClose(handle, true);
+        }
+
         events.publish(new WindowCloseRequestedEvent(this));
     }
 
@@ -434,6 +515,8 @@ public final class WindowImpl implements Window {
     }
 
     private void init() {
+        if (!GLFW.glfwInit()) { return; }
+
         this.posCallback.set(GLFWWindowPosCallback.create((_, x, y) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     current.name(), new ScreenPosition(x, y), current.monitor(), current.resolution(),
@@ -447,6 +530,7 @@ public final class WindowImpl implements Window {
             )));
         }));
         GLFW.glfwSetWindowPosCallback(handle, this.posCallback.get());
+
         this.sizeCallback.set(GLFWWindowSizeCallback.create((_, width, height) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), new WindowResolution(width, height),
@@ -457,48 +541,66 @@ public final class WindowImpl implements Window {
             events.publish(new WindowResizedEvent(this, previous.resolution()));
         }));
         GLFW.glfwSetWindowSizeCallback(handle, this.sizeCallback.get());
+
         this.closeCallback.set(GLFWWindowCloseCallback.create(
                 (_) -> events.publish(new WindowCloseRequestedEvent(this))
         ));
         GLFW.glfwSetWindowCloseCallback(handle, this.closeCallback.get());
+
         this.refreshCallback.set(GLFWWindowRefreshCallback.create((_) -> {
             // TODO: Call draw method when it exists
         }));
         GLFW.glfwSetWindowRefreshCallback(handle, this.refreshCallback.get());
+
         this.focusCallback.set(GLFWWindowFocusCallback.create((_, focused) -> {
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
-                    current.scale(), current.visibility(), current.options(),
-                    focused, false
-            ));
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.scale(), current.visibility(), current.options(),
+                        focused, false
+                );
+            });
             if (focused) { events.publish(new WindowFocusGainedEvent(this)); }
             else { events.publish(new WindowFocusLostEvent(this)); }
         }));
         GLFW.glfwSetWindowFocusCallback(handle, this.focusCallback.get());
+
         this.iconifyCallback.set(GLFWWindowIconifyCallback.create((_, iconified) -> {
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
-                    current.scale(), new WindowVisibility(
-                            iconified ? WindowVisibility.Type.MINIMIZED : WindowVisibility.Type.REGULAR,
-                            current.visibility().visible()
-                    ), current.options(), current.focused(), current.requestedAttention()
-            ));
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.scale(), new WindowVisibility(
+                                iconified ? WindowVisibility.Type.MINIMIZED : WindowVisibility.Type.REGULAR,
+                                current.visibility().visible()
+                        ), current.options(), current.focused(), current.requestedAttention()
+                );
+            });
             if (iconified) { events.publish(new WindowMinimizedEvent(this)); }
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
         GLFW.glfwSetWindowIconifyCallback(handle, this.iconifyCallback.get());
+
         this.maximizeCallback.set(GLFWWindowMaximizeCallback.create((_, maximized) -> {
-            state.updateAndGet(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
-                    current.scale(), new WindowVisibility(
-                            maximized ? WindowVisibility.Type.MAXIMIZED : WindowVisibility.Type.REGULAR,
-                            current.visibility().visible()
-                    ), current.options(), current.focused(), current.requestedAttention()
-            ));
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+
+                return new WindowState(
+                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.scale(), new WindowVisibility(
+                                maximized ? WindowVisibility.Type.MAXIMIZED : WindowVisibility.Type.REGULAR,
+                                current.visibility().visible()
+                        ), current.options(), current.focused(), current.requestedAttention()
+                );
+            });
             if (maximized) { events.publish(new WindowMaximizedEvent(this)); }
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
         GLFW.glfwSetWindowMaximizeCallback(handle, this.maximizeCallback.get());
+
         this.contentScaleCallback.set(GLFWWindowContentScaleCallback.create((_, scaleX, scaleY) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
                     current.name(), current.position(), current.monitor(), current.resolution(),
@@ -525,8 +627,10 @@ public final class WindowImpl implements Window {
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
             throw new IllegalStateException("❗ The buffers of a window must be swapped on the render thread!");
         }
+
         GLFW.glfwMakeContextCurrent(handle);
         events.publish(new WindowBeforeSwapBuffersEvent(this));
+
         GLFW.glfwSwapBuffers(handle);
         events.publish(new WindowAfterSwapBuffersEvent(this));
     }
@@ -545,22 +649,47 @@ public final class WindowImpl implements Window {
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
             throw new IllegalStateException("❗ A window must be destroyed on the render thread!");
         }
+
         GLFW.glfwDestroyWindow(handle);
-        this.posCallback.get().free();
-        this.posCallback.set(null);
-        this.sizeCallback.get().free();
-        this.sizeCallback.set(null);
-        this.closeCallback.get().free();
-        this.closeCallback.set(null);
-        this.refreshCallback.get().free();
-        this.refreshCallback.set(null);
-        this.focusCallback.get().free();
-        this.focusCallback.set(null);
-        this.iconifyCallback.get().free();
-        this.iconifyCallback.set(null);
-        this.maximizeCallback.get().free();
-        this.maximizeCallback.set(null);
-        this.contentScaleCallback.get().free();
-        this.contentScaleCallback.set(null);
+
+        if (this.posCallback.get() != null) {
+            this.posCallback.get().free();
+            this.posCallback.set(null);
+        }
+
+        if (this.sizeCallback.get() != null) {
+            this.sizeCallback.get().free();
+            this.sizeCallback.set(null);
+        }
+
+        if (this.closeCallback.get() != null) {
+            this.closeCallback.get().free();
+            this.closeCallback.set(null);
+        }
+
+        if (this.refreshCallback.get() != null) {
+            this.refreshCallback.get().free();
+            this.refreshCallback.set(null);
+        }
+
+        if (this.focusCallback.get() != null) {
+            this.focusCallback.get().free();
+            this.focusCallback.set(null);
+        }
+
+        if (this.iconifyCallback.get() != null) {
+            this.iconifyCallback.get().free();
+            this.iconifyCallback.set(null);
+        }
+
+        if (this.maximizeCallback.get() != null) {
+            this.maximizeCallback.get().free();
+            this.maximizeCallback.set(null);
+        }
+
+        if (this.contentScaleCallback.get() != null) {
+            this.contentScaleCallback.get().free();
+            this.contentScaleCallback.set(null);
+        }
     }
 }

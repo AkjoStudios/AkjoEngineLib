@@ -20,6 +20,7 @@ import java.util.Set;
 
 @Slf4j(topic = "engine / AkjoEnginePropertyInitializer")
 public class AkjoEnginePropertyInitializer implements ApplicationContextInitializer<GenericApplicationContext> {
+    private static final String CONFIG_FILE_NAME = "project.yml";
     private static final String PROPERTY_SOURCE_FILTER = "optional:classpath:/";
 
     private static final Set<String> ALLOWED_PREFIXES = Set.of(
@@ -46,9 +47,9 @@ public class AkjoEnginePropertyInitializer implements ApplicationContextInitiali
             }
         }
 
-        URL resource = Thread.currentThread().getContextClassLoader().getResource("app.yml");
+        URL resource = Thread.currentThread().getContextClassLoader().getResource(CONFIG_FILE_NAME);
         if (resource == null) {
-            throw new IllegalStateException("❗ app.yml not found in resources. Please ensure it is present.");
+            throw new IllegalStateException("❗ " + CONFIG_FILE_NAME + " not found in resources. Please ensure it is present.");
         }
 
         ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
@@ -65,7 +66,7 @@ public class AkjoEnginePropertyInitializer implements ApplicationContextInitiali
             }
             context.registerBean(AkjoEngineAppProperties.class, () -> appProperties);
         } catch (Exception e) {
-            throw new IllegalStateException("❗ Failed to load or parse app.yml. Please ensure it is valid YAML.", e);
+            throw new IllegalStateException("❗ Failed to load or parse " + CONFIG_FILE_NAME + ". Please ensure it is valid YAML.", e);
         }
 
         log.info("✅ Application properties initialized and validated successfully.");

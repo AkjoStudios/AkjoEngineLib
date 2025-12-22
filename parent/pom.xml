@@ -16,6 +16,7 @@
 
         <spring-boot.version>3.5.7</spring-boot.version>
         <lwjgl.version>3.3.6</lwjgl.version>
+        <joml.version>1.10.8</joml.version>
         <jetbrains.annotations.version>26.0.2-1</jetbrains.annotations.version>
 
         <maven.compiler.version>3.14.1</maven.compiler.version>
@@ -176,6 +177,12 @@
                 <version>${lwjgl.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.joml</groupId>
+                <artifactId>joml</artifactId>
+                <version>${joml.version}</version>
             </dependency>
 
             <dependency>

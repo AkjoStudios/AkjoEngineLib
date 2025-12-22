@@ -63,7 +63,9 @@ public final class MonitorImpl implements Monitor {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer px = stack.mallocInt(1);
             IntBuffer py = stack.mallocInt(1);
+
             GLFW.glfwGetMonitorPos(handle, px, py);
+
             return new ScreenPosition(px.get(0), py.get(0));
         } catch (Exception _) {
             return new ScreenPosition(0, 0);
@@ -114,10 +116,13 @@ public final class MonitorImpl implements Monitor {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer pwidth = stack.mallocInt(1);
             IntBuffer pheight = stack.mallocInt(1);
+
             GLFW.glfwGetMonitorPhysicalSize(handle, pwidth, pheight);
+
             if (pwidth.get(0) == 0 || pheight.get(0) == 0) {
                 return null;
             }
+
             return new MonitorSize(pwidth.get(0), pheight.get(0));
         } catch (Exception _) {
             return new MonitorSize(0, 0);
@@ -134,10 +139,13 @@ public final class MonitorImpl implements Monitor {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer pscaleX = stack.mallocFloat(1);
             FloatBuffer pscaleY = stack.mallocFloat(1);
+
             GLFW.glfwGetMonitorContentScale(handle, pscaleX, pscaleY);
+
             if (pscaleX.get(0) == 0 || pscaleY.get(0) == 0) {
                 return null;
             }
+
             return new MonitorContentScale(pscaleX.get(0), pscaleY.get(0));
         } catch (Exception _) {
             return new MonitorContentScale(0, 0);
@@ -156,10 +164,13 @@ public final class MonitorImpl implements Monitor {
             IntBuffer py = stack.mallocInt(1);
             IntBuffer pwidth = stack.mallocInt(1);
             IntBuffer pheight = stack.mallocInt(1);
+
             GLFW.glfwGetMonitorWorkarea(handle, px, py, pwidth, pheight);
+
             if (pwidth.get(0) == 0 || pheight.get(0) == 0) {
                 return null;
             }
+
             return new MonitorWorkArea(new ScreenPosition(px.get(0), py.get(0)), new MonitorResolution(pwidth.get(0), pheight.get(0)));
         } catch (Exception _) {
             return new MonitorWorkArea(
@@ -180,12 +191,19 @@ public final class MonitorImpl implements Monitor {
         if (gamma <= 0.0 || Double.isInfinite(gamma)) {
             throw new IllegalArgumentException("❗ Gamma must be set to a finite value and must be greater than 0.0! Given: " + gamma);
         }
+
         renderScheduler.immediate(() -> {
+            if (!GLFW.glfwInit()) { return; }
+
             GLFW.glfwSetGamma(handle, (float) gamma);
-            state.updateAndGet(current -> new MonitorState(
-                    current.name(), current.position(), current.resolution(), current.refreshRate(),
-                    current.size(), current.scale(), current.workArea(), gamma
-            ));
+
+            state.updateAndGet(current -> {
+                if (current == null) { return null; }
+                return new MonitorState(
+                        current.name(), current.position(), current.resolution(), current.refreshRate(),
+                        current.size(), current.scale(), current.workArea(), gamma
+                );
+            });
         });
     }
 

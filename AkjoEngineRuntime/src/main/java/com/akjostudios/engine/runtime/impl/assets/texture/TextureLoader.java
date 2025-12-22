@@ -17,7 +17,11 @@ import java.nio.IntBuffer;
 import java.nio.channels.SeekableByteChannel;
 
 public final class TextureLoader implements AssetLoader<Texture, TextureLoader.Data> {
-    public record Data(@NotNull ByteBuffer pixels, int width, int height, int channels) {}
+    public record Data(
+            @NotNull ByteBuffer pixels,
+            int width, int height,
+            int channels
+    ) {}
 
     @Override
     public @NotNull Data loadRaw(@NotNull ResourcePath path, @NotNull FileSystem fs) throws Exception {

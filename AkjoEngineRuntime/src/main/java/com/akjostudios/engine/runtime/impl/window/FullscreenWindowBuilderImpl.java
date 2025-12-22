@@ -38,6 +38,9 @@ public final class FullscreenWindowBuilderImpl extends AbstractWindowBuilder imp
         if (this.hook == null) {
             throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine - please report it using the issue tracker.");
         }
+        if (!GLFW.glfwInit()) {
+            throw new IllegalStateException("❗ Cannot build window without GLFW being initialized!");
+        }
 
         MonitorResolution finalResolution = monitor.resolution();
         GLFW.glfwDefaultWindowHints();

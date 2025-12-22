@@ -3,6 +3,7 @@ module AkjoEngineApi {
     requires static lombok;
     //noinspection Java9RedundantRequiresStatement
     requires org.slf4j;
+    requires org.joml;
 
     exports com.akjostudios.engine.api;
 
@@ -31,4 +32,6 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.window.events;
 
     exports com.akjostudios.engine.api.assets;
+
+    exports com.akjostudios.engine.res;
 }

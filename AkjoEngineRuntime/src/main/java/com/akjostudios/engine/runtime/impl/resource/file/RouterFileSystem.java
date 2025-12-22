@@ -1,8 +1,10 @@
 package com.akjostudios.engine.runtime.impl.resource.file;
 
+import com.akjostudios.engine.api.IAkjoApplication;
 import com.akjostudios.engine.api.resource.file.FileSystem;
 import com.akjostudios.engine.api.resource.file.MountableFileSystem;
 import com.akjostudios.engine.api.resource.file.ResourcePath;
+import com.akjostudios.engine.runtime.AkjoEngineRuntime;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -15,6 +17,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class RouterFileSystem implements MountableFileSystem {
+    private static final char MOUNT_SEPARATOR = ':';
+
     private final Map<String, Mount> mounts = new ConcurrentHashMap<>();
 
     @Override
@@ -68,22 +72,50 @@ public final class RouterFileSystem implements MountableFileSystem {
     public @NotNull List<ResourcePath> list(ResourcePath path) {
         Mount mount = resolveMount(path);
         List<ResourcePath> paths = mount.fileSystem.list(mount.resolve(path));
-        String alias = path.path().split("/", 2)[0];
+
+        String pathStr = path.path();
+        int separatorIndex = pathStr.indexOf(MOUNT_SEPARATOR);
+        String alias = separatorIndex == -1 ? pathStr : pathStr.substring(0, separatorIndex);
+
         ResourcePath.Scheme scheme = path.scheme();
         List<ResourcePath> resolved = new ArrayList<>(paths.size());
+
         paths.forEach(foundPath -> {
             String relativePath = foundPath.path();
-            resolved.add(new ResourcePath(scheme, alias + "/" + relativePath));
+            resolved.add(new ResourcePath(scheme, alias + MOUNT_SEPARATOR + relativePath));
         });
+
         return resolved;
+    }
+
+    public @NotNull RouterFileSystem setup(
+            @NotNull String basePath,
+            @NotNull String assetsPath,
+            @NotNull String engineMount,
+            @NotNull String enginePath,
+            @NotNull Class<? extends IAkjoApplication> applicationClass
+    ) {
+        mount(assetsPath, new ClasspathFileSystem(
+                applicationClass.getClassLoader(),
+                assetsPath
+        ), basePath);
+        mount(engineMount, new ClasspathFileSystem(
+                AkjoEngineRuntime.class.getClassLoader(),
+                enginePath
+        ), basePath);
+
+        return this;
     }
 
     private @NotNull Mount resolveMount(@NotNull ResourcePath path) throws IllegalArgumentException {
         String pathStr = path.path().startsWith("/") ? path.path().substring(1) : path.path();
-        int slash = pathStr.indexOf('/');
-        String alias = slash == -1 ? pathStr : pathStr.substring(0, slash);
+
+        int separatorIndex = pathStr.indexOf(MOUNT_SEPARATOR);
+        String alias = separatorIndex == -1 ? pathStr : pathStr.substring(0, separatorIndex);
+
         Mount mount = mounts.get(alias);
         if (mount == null) { throw new IllegalArgumentException("❗ The router file system does not have a mount for alias '" + alias + "'!"); }
+
         return mount;
     }
 
@@ -108,7 +140,12 @@ public final class RouterFileSystem implements MountableFileSystem {
 
             private @NotNull ResourcePath resolve(@NotNull ResourcePath path) {
                 String actualPath = path.path().startsWith("/") ? path.path().substring(1) : path.path();
-                String relativePath = actualPath.startsWith(alias + "/") ? actualPath.substring(alias.length() + 1) : actualPath;
+
+                String prefix = alias + MOUNT_SEPARATOR;
+                String relativePath = actualPath.startsWith(prefix)
+                        ? actualPath.substring(prefix.length())
+                        : actualPath;
+
                 String joined = root.isEmpty() ? relativePath : (root + "/" + relativePath);
                 return new ResourcePath(path.scheme(), joined);
             }

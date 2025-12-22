@@ -55,6 +55,9 @@ public final class BorderlessWindowBuilderImpl extends AbstractWindowBuilder imp
         if (this.hook == null) {
             throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine - please report it using the issue tracker.");
         }
+        if (!GLFW.glfwInit()) {
+            throw new IllegalStateException("❗ Cannot build window without GLFW being initialized!");
+        }
 
         final WindowVisibility finalVisibility = visibility;
         final boolean finalResizable = resizable;

@@ -5,7 +5,6 @@ import com.akjostudios.engine.api.resource.file.ResourcePath;
 import com.akjostudios.engine.runtime.util.OpenGLUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
@@ -13,7 +12,6 @@ import org.lwjgl.opengl.GL11;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RequiredArgsConstructor
-@ToString
 @Accessors(fluent = true)
 public final class TextureImpl implements Texture {
     @Getter private final ResourcePath path;
@@ -39,5 +37,13 @@ public final class TextureImpl implements Texture {
                 GL11.glDeleteTextures(id);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "TextureImpl[" + path + "]" + "(" +
+                "id=" + id() + ", " +
+                "width=" + width() + ", " +
+                "height=" + height() + ")";
     }
 }

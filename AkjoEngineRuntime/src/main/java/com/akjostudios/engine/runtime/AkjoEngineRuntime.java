@@ -2,7 +2,6 @@ package com.akjostudios.engine.runtime;
 
 import com.akjostudios.engine.api.AkjoApplication;
 import com.akjostudios.engine.api.IAkjoApplication;
-import com.akjostudios.engine.api.assets.Texture;
 import com.akjostudios.engine.api.common.Disposable;
 import com.akjostudios.engine.api.common.mailbox.Mailbox;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
@@ -11,12 +10,10 @@ import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.runtime.components.EventListenerRegistrar;
 import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
-import com.akjostudios.engine.runtime.impl.assets.texture.TextureLoader;
 import com.akjostudios.engine.runtime.impl.event.EventBusImpl;
 import com.akjostudios.engine.runtime.impl.lifecycle.LifecycleImpl;
 import com.akjostudios.engine.runtime.impl.monitor.MonitorRegistryImpl;
 import com.akjostudios.engine.runtime.impl.resource.asset.AssetManagerImpl;
-import com.akjostudios.engine.runtime.impl.resource.file.ClasspathFileSystem;
 import com.akjostudios.engine.runtime.impl.resource.file.RouterFileSystem;
 import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
 import com.akjostudios.engine.runtime.impl.scheduling.SchedulerImpl;
@@ -49,6 +46,8 @@ public class AkjoEngineRuntime implements SmartLifecycle {
     private static final String ENGINE_VERSION_PROPERTY = "engine.version";
 
     private static final String ASSETS_PATH = "assets";
+    private static final String ENGINE_MOUNT = "engine";
+    private static final String ENGINE_PATH = "_internal";
     private static final String ROOT_BASE_PATH = "/";
 
     private final IAkjoApplication application;
@@ -171,41 +170,28 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                     }
             ));
 
-            // Initialize asset system
-            context.__engine_setFileSystem(
-                    EngineTokens.token(),
-                    new RouterFileSystem()
+            // Initialize virtual file system
+            RouterFileSystem fs = new RouterFileSystem().setup(
+                    ROOT_BASE_PATH, ASSETS_PATH,
+                    ENGINE_MOUNT, ENGINE_PATH,
+                    application.getClass()
             );
+            context.__engine_setFileSystem(EngineTokens.token(), fs);
 
-            context.fs().mount(ASSETS_PATH, new ClasspathFileSystem(
-                    application.getClass().getClassLoader(),
-                    ASSETS_PATH
-            ), ROOT_BASE_PATH);
-
+            // Initialize asset manager
             AssetManagerImpl assetManager = new AssetManagerImpl(
                     context.fs(),
                     context.scheduler(),
                     exceptionHandler
             );
+            assetManager.setup();
+            context.__engine_setAssetManager(EngineTokens.token(), assetManager);
 
-            assetManager.registerLoader(Texture.class, new TextureLoader());
+            // Initialize monitor registry
+            context.__engine_setMonitors(EngineTokens.token(), new MonitorRegistryImpl());
 
-            context.__engine_setAssetManager(
-                    EngineTokens.token(),
-                    assetManager
-            );
-
-            // Set monitor registry object
-            context.__engine_setMonitors(
-                    EngineTokens.token(),
-                    new MonitorRegistryImpl()
-            );
-
-            // Set window registry object
-            context.__engine_setWindows(
-                    EngineTokens.token(),
-                    new WindowRegistryImpl()
-            );
+            // Initialize window registry
+            context.__engine_setWindows(EngineTokens.token(), new WindowRegistryImpl());
 
             // Initialize application
             application.onInit();

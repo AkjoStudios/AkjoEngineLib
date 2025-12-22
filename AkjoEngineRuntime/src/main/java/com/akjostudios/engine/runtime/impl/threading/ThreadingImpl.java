@@ -23,7 +23,7 @@ import static com.akjostudios.engine.runtime.impl.time.TimeImpl.NANOS_PER_SECOND
 
 @RequiredArgsConstructor
 public final class ThreadingImpl implements Threading {
-    public static final String DEFAULT_MAIN_THREAD_NAME = "main";
+    public static final String DEFAULT_MAIN_THREAD_NAME = "Main";
 
     public static final String MAIN_THREAD_NAME = "Runtime";
     public static final String RENDER_THREAD_NAME = "Render";
