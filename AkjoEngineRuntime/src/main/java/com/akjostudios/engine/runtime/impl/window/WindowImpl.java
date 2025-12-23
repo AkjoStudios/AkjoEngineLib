@@ -77,10 +77,7 @@ public final class WindowImpl implements Window {
 
         this.handle = handle;
 
-        this.canvas = new CanvasImpl(() -> {
-            renderRequested.set(true);
-            threading.requestRender();
-        });
+        this.canvas = new CanvasImpl(this::requestRender);
         this.backend = new CanvasRenderBackend();
 
         this.renderScheduler = renderScheduler;
