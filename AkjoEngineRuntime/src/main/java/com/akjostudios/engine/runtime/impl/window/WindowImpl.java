@@ -644,8 +644,7 @@ public final class WindowImpl implements Window {
                     current.focused(), current.requestedAttention()
             ));
             updateMonitor();
-            renderRequested.set(true);
-            threading.requestRender();
+            requestRender();
             events.publish(new WindowResizedEvent(this, previous.resolution()));
         }));
         GLFW.glfwSetWindowSizeCallback(handle, this.sizeCallback.get());
@@ -657,8 +656,7 @@ public final class WindowImpl implements Window {
                     current.scale(), current.visibility(), current.options(),
                     current.focused(), current.requestedAttention()
             ));
-            renderRequested.set(true);
-            threading.requestRender();
+            requestRender();
             events.publish(new FramebufferResizedEvent(this, previous.framebufferResolution()));
         }));
         GLFW.glfwSetFramebufferSizeCallback(handle, this.framebufferSizeCallback.get());
@@ -668,10 +666,7 @@ public final class WindowImpl implements Window {
         ));
         GLFW.glfwSetWindowCloseCallback(handle, this.closeCallback.get());
 
-        this.refreshCallback.set(GLFWWindowRefreshCallback.create((_) -> {
-            renderRequested.set(true);
-            threading.requestRender();
-        }));
+        this.refreshCallback.set(GLFWWindowRefreshCallback.create((_) -> requestRender()));
         GLFW.glfwSetWindowRefreshCallback(handle, this.refreshCallback.get());
 
         this.focusCallback.set(GLFWWindowFocusCallback.create((_, focused) -> {
@@ -703,8 +698,7 @@ public final class WindowImpl implements Window {
                         ), current.options(), current.focused(), current.requestedAttention()
                 );
             });
-            renderRequested.set(true);
-            threading.requestRender();
+            requestRender();
             if (iconified) { events.publish(new WindowMinimizedEvent(this)); }
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
@@ -723,8 +717,7 @@ public final class WindowImpl implements Window {
                         ), current.options(), current.focused(), current.requestedAttention()
                 );
             });
-            renderRequested.set(true);
-            threading.requestRender();
+            requestRender();
             if (maximized) { events.publish(new WindowMaximizedEvent(this)); }
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
@@ -738,8 +731,7 @@ public final class WindowImpl implements Window {
                     current.focused(), current.requestedAttention()
             ));
             updateMonitor();
-            renderRequested.set(true);
-            threading.requestRender();
+            requestRender();
             events.publish(new WindowContentScaleChangedEvent(this, previous.scale()));
         }));
         GLFW.glfwSetWindowContentScaleCallback(handle, this.contentScaleCallback.get());
