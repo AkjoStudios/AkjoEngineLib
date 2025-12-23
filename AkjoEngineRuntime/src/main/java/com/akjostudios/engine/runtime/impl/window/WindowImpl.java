@@ -573,7 +573,7 @@ public final class WindowImpl implements Window {
     @Override
     public @NotNull Cancellable onRender(@NotNull Runnable callback) {
         renderCallbacks.add(callback);
-        renderRequested.set(true);
+        requestRender();
 
         return new Cancellable() {
             private final AtomicBoolean cancelled = new AtomicBoolean(false);
