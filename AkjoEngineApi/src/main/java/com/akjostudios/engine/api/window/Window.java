@@ -38,6 +38,10 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      */
     void name(@NotNull String name);
     /**
+     * Sets the name/title of this window.
+     */
+    default void title(@NotNull String name) { name(name); }
+    /**
      * @return The position of this window on the virtual screen.
      */
     @NotNull ScreenPosition position();
