@@ -2,7 +2,10 @@ package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
+import com.akjostudios.engine.api.logging.LoggerProvider;
 import com.akjostudios.engine.api.monitor.MonitorProvider;
+import com.akjostudios.engine.api.render.backend.RenderBackendProvider;
+import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.Window;
@@ -32,9 +35,14 @@ import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER
 public final class WindowRegistryImpl implements WindowRegistry {
     private final List<Window> windows = new CopyOnWriteArrayList<>();
 
-    private final AtomicReference<FrameScheduler> renderScheduler = new AtomicReference<>();
+    private final AtomicReference<RenderBackendProvider> backendProvider = new AtomicReference<>();
+
     private final AtomicReference<Threading> threading = new AtomicReference<>();
+    private final AtomicReference<FrameScheduler> renderScheduler = new AtomicReference<>();
     private final AtomicReference<EventBus> events = new AtomicReference<>();
+    private final AtomicReference<AssetManager> assets = new AtomicReference<>();
+
+    private final AtomicReference<LoggerProvider> loggerProvider = new AtomicReference<>();
 
     /**
      * @return A future that returns the window for the given parameters.
@@ -72,9 +80,12 @@ public final class WindowRegistryImpl implements WindowRegistry {
         if (builderType == WindowedWindowBuilder.class) {
             T impl = builderType.cast(new WindowedWindowBuilderImpl(
                     title, monitor, vsync,
-                    renderScheduler.get(),
+                    backendProvider.get().retrieve(),
                     threading.get(),
-                    events.get()
+                    renderScheduler.get(),
+                    events.get(),
+                    assets.get(),
+                    loggerProvider.get()
             ));
             impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
@@ -82,9 +93,12 @@ public final class WindowRegistryImpl implements WindowRegistry {
         if (builderType == BorderlessWindowBuilder.class) {
             T impl = builderType.cast(new BorderlessWindowBuilderImpl(
                     title, monitor, vsync,
-                    renderScheduler.get(),
+                    backendProvider.get().retrieve(),
                     threading.get(),
-                    events.get()
+                    renderScheduler.get(),
+                    events.get(),
+                    assets.get(),
+                    loggerProvider.get()
             ));
             impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
@@ -92,9 +106,12 @@ public final class WindowRegistryImpl implements WindowRegistry {
         if (builderType == FullscreenWindowBuilder.class) {
             T impl = builderType.cast(new FullscreenWindowBuilderImpl(
                     title, monitor, vsync,
-                    renderScheduler.get(),
+                    backendProvider.get().retrieve(),
                     threading.get(),
-                    events.get()
+                    renderScheduler.get(),
+                    events.get(),
+                    assets.get(),
+                    loggerProvider.get()
             ));
             impl.__engine_setRegistryHook(EngineTokens.token(), this::addWindow);
             return impl;
@@ -179,9 +196,12 @@ public final class WindowRegistryImpl implements WindowRegistry {
     @Override
     public void __engine_init(
             @NotNull Object token,
-            @NotNull FrameScheduler renderScheduler,
+            @NotNull RenderBackendProvider backendProvider,
             @NotNull Threading threading,
-            @NotNull EventBus events
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull EventBus events,
+            @NotNull AssetManager assets,
+            @NotNull LoggerProvider loggerProvider
     ) throws IllegalCallerException, IllegalStateException {
         EngineTokens.verify(token);
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
@@ -221,9 +241,14 @@ public final class WindowRegistryImpl implements WindowRegistry {
                 }
         );
 
+        this.backendProvider.set(backendProvider);
+
         this.renderScheduler.set(renderScheduler);
         this.threading.set(threading);
         this.events.set(events);
+        this.assets.set(assets);
+
+        this.loggerProvider.set(loggerProvider);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.akjostudios.engine.api.assets;
 
+import com.akjostudios.engine.api.assets.texture.Texture;
 import com.akjostudios.engine.api.resource.asset.Asset;
 import org.jetbrains.annotations.NotNull;
 import org.joml.*;

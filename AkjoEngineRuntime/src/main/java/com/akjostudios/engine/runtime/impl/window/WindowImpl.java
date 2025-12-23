@@ -10,15 +10,16 @@ import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorPosition;
 import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
+import com.akjostudios.engine.api.render.backend.RenderBackend;
+import com.akjostudios.engine.api.render.context.FrameInfo;
+import com.akjostudios.engine.api.render.context.RenderDevice;
+import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.*;
 import com.akjostudios.engine.api.window.events.*;
 import com.akjostudios.engine.runtime.impl.canvas.CanvasImpl;
-import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
 import com.akjostudios.engine.runtime.impl.monitor.MonitorImpl;
-import com.akjostudios.engine.runtime.impl.render.backend.CanvasRenderBackend;
-import com.akjostudios.engine.runtime.impl.render.backend.RenderBackend;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
@@ -46,9 +47,12 @@ public final class WindowImpl implements Window {
     private final CanvasImpl canvas;
     private final RenderBackend backend;
 
-    private final FrameScheduler renderScheduler;
     private final Threading threading;
+    private final FrameScheduler renderScheduler;
     private final EventBus events;
+
+    private final AtomicBoolean backendInitialized = new AtomicBoolean(false);
+    private final RenderDevice device;
 
     private final AtomicBoolean renderRequested = new AtomicBoolean(true);
     private final List<Runnable> renderCallbacks = new CopyOnWriteArrayList<>();
@@ -69,20 +73,26 @@ public final class WindowImpl implements Window {
 
     public WindowImpl(
             long handle,
-            @NotNull FrameScheduler renderScheduler,
+            @NotNull RenderBackend backend,
             @NotNull Threading threading,
-            @NotNull EventBus events
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull EventBus events,
+            @NotNull AssetManager assets,
+            @NotNull Logger windowLogger,
+            @NotNull Logger renderLogger
     ) {
-        this.log = new LoggerImpl("Window[" + handle + "]");
+        this.log = windowLogger;
 
         this.handle = handle;
 
-        this.canvas = new CanvasImpl(this::requestRender);
-        this.backend = new CanvasRenderBackend();
+        this.canvas = new CanvasImpl(this);
+        this.backend = backend;
 
-        this.renderScheduler = renderScheduler;
         this.threading = threading;
+        this.renderScheduler = renderScheduler;
         this.events = events;
+
+        this.device = new RenderDevice(threading, assets, renderLogger);
 
         this.renderScheduler.immediate(() -> {
             WindowState initState = new WindowState(
@@ -768,6 +778,15 @@ public final class WindowImpl implements Window {
             GL.setCapabilities(capabilities);
         }
 
+        if (backendInitialized.compareAndSet(false, true)) {
+            try {
+                backend.init(device);
+            } catch (Throwable t) {
+                backendInitialized.set(false);
+                throw t;
+            }
+        }
+
         FramebufferResolution fbResolution = framebufferResolution();
         if (fbResolution.width() != 0 && fbResolution.height() != 0) {
             GL11.glViewport(0, 0, fbResolution.width(), fbResolution.height());
@@ -800,7 +819,7 @@ public final class WindowImpl implements Window {
     @Override
     public void __engine_renderCanvas(
             @NotNull Object token
-    ) throws IllegalCallerException, IllegalStateException {
+    ) throws Exception, IllegalCallerException, IllegalStateException {
         EngineTokens.verify(token);
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
             throw new IllegalStateException("❗ The canvas of a window must be rendered on the render thread!");
@@ -808,8 +827,11 @@ public final class WindowImpl implements Window {
 
         runRenderCallbacks();
 
+        backend.beginFrame(new FrameInfo(
+                framebufferResolution()
+        ));
         canvas.drainTo(backend::execute);
-        backend.flush();
+        backend.endFrame();
     }
 
     /**
@@ -831,6 +853,13 @@ public final class WindowImpl implements Window {
         if (capabilities != null) {
             GL.setCapabilities(capabilities);
         }
+
+        try {
+            backend.dispose();
+        } catch (Throwable t) {
+            log.error("❗ Failed to dispose render backend!", t);
+        }
+
         GLFW.glfwDestroyWindow(handle);
 
         if (this.posCallback.get() != null) {

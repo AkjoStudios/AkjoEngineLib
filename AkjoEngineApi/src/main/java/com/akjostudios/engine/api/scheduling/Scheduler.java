@@ -31,7 +31,13 @@ public interface Scheduler {
      * Runs the given task once on the next frame of the thread associated with the given scheduler lane.
      * @return An object which can be used to cancel the task.
      */
-    @NotNull Cancellable runOnceNextFrame(@NotNull Runnable task, @NotNull SchedulerLane lane);
+    @NotNull Cancellable runOnceNextFrame(@NotNull Runnable task, @NotNull FrameScheduler.Lane lane);
+
+    /**
+     * Runs the given task immediately with the given scheduler lane.
+     * @return An object which can be used to cancel the task.
+     */
+    @NotNull Cancellable runImmediately(@NotNull Runnable task, @NotNull SchedulerLane lane);
 
     /**
      * @return If the given task is still scheduled.

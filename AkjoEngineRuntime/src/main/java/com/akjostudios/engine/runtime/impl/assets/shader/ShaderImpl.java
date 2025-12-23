@@ -1,7 +1,7 @@
 package com.akjostudios.engine.runtime.impl.assets.shader;
 
 import com.akjostudios.engine.api.assets.Shader;
-import com.akjostudios.engine.api.assets.Texture;
+import com.akjostudios.engine.api.assets.texture.Texture;
 import com.akjostudios.engine.api.resource.file.ResourcePath;
 import com.akjostudios.engine.runtime.util.OpenGLUtil;
 import lombok.Getter;
@@ -31,13 +31,15 @@ public class ShaderImpl implements Shader {
     @Override
     public void bind() {
         ensureNotDisposed();
-        OpenGLUtil.checkContext("bind shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         GL20.glUseProgram(programId);
     }
 
     @Override
     public void unbind() {
-        OpenGLUtil.checkContext("unbind shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         GL20.glUseProgram(0);
     }
 
@@ -52,7 +54,8 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, int value) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         int location = getUniformLocation(name);
         if (location != -1) {
             GL20.glUniform1i(location, value);
@@ -61,7 +64,8 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, float value) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         int location = getUniformLocation(name);
         if (location != -1) {
             GL20.glUniform1f(location, value);
@@ -80,7 +84,8 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, float x, float y) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         int location = getUniformLocation(name);
         if (location != -1) {
             GL20.glUniform2f(location, x, y);
@@ -94,7 +99,8 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, float x, float y, float z) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         int location = getUniformLocation(name);
         if (location != -1) {
             GL20.glUniform3f(location, x, y, z);
@@ -108,7 +114,8 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, float x, float y, float z, float w) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         int location = getUniformLocation(name);
         if (location != -1) {
             GL20.glUniform4f(location, x, y, z, w);
@@ -117,7 +124,7 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, @NotNull Matrix3fc value) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
 
         int location = getUniformLocation(name);
         if (location == -1) {
@@ -133,7 +140,7 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, @NotNull Matrix4fc value) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
 
         int location = getUniformLocation(name);
         if (location == -1) {
@@ -149,7 +156,8 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, int@NotNull[] values) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         int location = getUniformLocation(name);
         if (location != -1) {
             GL20.glUniform1iv(location, values);
@@ -158,7 +166,8 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void setUniform(@NotNull String name, float@NotNull[] values) {
-        OpenGLUtil.checkContext("set uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
+
         int location = getUniformLocation(name);
         if (location != -1) {
             GL20.glUniform1fv(location, values);
@@ -167,7 +176,7 @@ public class ShaderImpl implements Shader {
 
     @Override
     public void bindTexture(@NotNull String name, @NotNull Texture texture, int slot) {
-        OpenGLUtil.checkContext("bind texture \"" + texture.id() + "\" into slot " + slot + " as uniform \"" + name + "\" for shader at \"" + path + "\"");
+        if (OpenGLUtil.contextFail()) { return; }
 
         int location = getUniformLocation(name);
         if (location == -1) {

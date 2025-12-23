@@ -1,6 +1,7 @@
-package com.akjostudios.engine.api.assets;
+package com.akjostudios.engine.api.assets.texture;
 
 import com.akjostudios.engine.api.resource.asset.Asset;
+import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
 public interface Texture extends Asset {
@@ -10,14 +11,9 @@ public interface Texture extends Asset {
     int id();
 
     /**
-     * @return The width of the texture in pixels.
+     * @return The resolution of this texture.
      */
-    int width();
-
-    /**
-     * @return The height of the texture in pixels.
-     */
-    int height();
+    @NotNull TextureResolution resolution();
 
     /**
      * Binds this texture to the currently active texture unit (GL_TEXTURE_2D)

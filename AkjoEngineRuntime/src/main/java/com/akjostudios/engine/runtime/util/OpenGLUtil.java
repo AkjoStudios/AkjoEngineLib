@@ -8,16 +8,26 @@ import org.lwjgl.opengl.GL;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class OpenGLUtil {
-    public static void checkContext(
+    public static boolean contextFail() {
+        if (GLFW.glfwGetCurrentContext() == 0) { return true; }
+        try {
+            GL.getCapabilities();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+        return false;
+    }
+
+    public static void contextFail(
             @NotNull String action
     ) {
         if (GLFW.glfwGetCurrentContext() == 0) {
-            throw new IllegalStateException("❌ Failed to " + action + " as there is no active OpenGL context!");
+            throw new IllegalStateException("❌  Failed to " + action + " as there is no active OpenGL context!");
         }
         try {
             GL.getCapabilities();
         } catch (IllegalStateException e) {
-            throw new IllegalStateException("❌ Failed to " + action + " without any OpenGL capabilities!");
+            throw new IllegalStateException("❌  Failed to " + action + " without any OpenGL capabilities!");
         }
     }
 }

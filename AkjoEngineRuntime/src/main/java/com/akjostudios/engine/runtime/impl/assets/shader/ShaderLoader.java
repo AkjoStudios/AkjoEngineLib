@@ -34,7 +34,7 @@ public final class ShaderLoader implements AssetLoader<Shader, ShaderLoader.Sour
 
     @Override
     public @NotNull Shader createAsset(@NotNull ResourcePath path, @NotNull ShaderLoader.Source data) {
-        OpenGLUtil.checkContext("create shader at \"" + path + "\"");
+        OpenGLUtil.contextFail("create shader at \"" + path + "\"");
 
         int programId = GL20.glCreateProgram();
         int vertId = compileShader(GL20.GL_VERTEX_SHADER, data.vertexSource(), path + VERT_EXTENSION);

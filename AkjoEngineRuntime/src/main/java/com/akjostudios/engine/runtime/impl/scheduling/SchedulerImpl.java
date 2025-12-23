@@ -59,10 +59,19 @@ public final class SchedulerImpl implements Scheduler {
     }
 
     @Override
-    public @NotNull Cancellable runOnceNextFrame(@NotNull Runnable task, @NotNull SchedulerLane lane) {
+    public @NotNull Cancellable runOnceNextFrame(@NotNull Runnable task, @NotNull FrameScheduler.Lane lane) {
         return switch (lane) {
             case RENDER -> renderScheduler.afterFrames(1, task);
             case AUDIO -> audioScheduler.afterFrames(1, task);
+        };
+    }
+
+    @Override
+    public @NotNull Cancellable runImmediately(@NotNull Runnable task, @NotNull SchedulerLane lane) {
+        return switch (lane) {
+            case RENDER -> renderScheduler.immediate(task);
+            case LOGIC -> logicScheduler.immediate(task);
+            case AUDIO -> audioScheduler.immediate(task);
         };
     }
 

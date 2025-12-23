@@ -5,21 +5,28 @@ import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public interface FrameScheduler {
+    enum Lane { RENDER, AUDIO }
+
     /**
      * Runs the given task on every frame of this scheduler.
      * @return An object which can be used to cancel the task.
      */
     @NotNull Cancellable everyFrame(@NotNull Runnable task);
+
     /**
      * Runs the given task after the given frame amount once.
      * @return An object which can be used to cancel the task.
      */
     @NotNull Cancellable afterFrames(int frames, @NotNull Runnable task);
+
     /**
      * Runs the given task as soon as possible.
      * @return An object which can be used to cancel the task.
      */
-    @NotNull Cancellable immediate(@NotNull Runnable task);
+    default @NotNull Cancellable immediate(@NotNull Runnable task) {
+        return afterFrames(0, task);
+    }
+
     /**
      * @return The current frame count
      */

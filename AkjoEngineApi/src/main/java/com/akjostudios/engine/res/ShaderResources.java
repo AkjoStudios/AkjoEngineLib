@@ -11,7 +11,7 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 @SuppressWarnings("unused")
 public enum ShaderResources implements EngineResources<Shader> {
-    UI_DEFAULT(new ResourcePath(ResourcePath.Scheme.CLASSPATH, "engine:shaders/ui_default"), Shader.class);
+    SPRITE(new ResourcePath(ResourcePath.Scheme.CLASSPATH, "engine:shaders/sprite"), Shader.class);
 
     private final ResourcePath path;
     private final Class<Shader> type;

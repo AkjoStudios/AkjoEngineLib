@@ -1,6 +1,7 @@
 package com.akjostudios.engine.runtime.impl.event;
 
 import com.akjostudios.engine.api.event.*;
+import com.akjostudios.engine.api.lifecycle.Lifecycle;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.scheduling.Scheduler;
 import com.akjostudios.engine.runtime.impl.threading.ThreadingImpl;
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 @SuppressWarnings("unused")
 public final class EventBusImpl implements EventBus {
+    private final Lifecycle lifecycle;
     private final ThreadingImpl threading;
     private final Scheduler scheduler;
     private final Logger log;
@@ -75,9 +77,13 @@ public final class EventBusImpl implements EventBus {
             if (!subscription.isActive()) { return; }
             try {
                 subscription.listener.onEvent(event);
+            } catch (IllegalStateException e) {
+                log.error(e, "Got an unrecoverable error from event listener \"{}\"!", event.getClass().getSimpleName());
+                threading.handleUncaught(e);
+                lifecycle.stopApplication(e);
             } catch (Throwable t) {
                 try {
-                    log.error(t, "Event listener threw an exception for {}!", event.getClass().getSimpleName());
+                    log.error(t, "Event listener threw an exception for \"{}\"!", event.getClass().getSimpleName());
                     threading.handleUncaught(t);
                 } catch (Throwable ignored) {}
             }

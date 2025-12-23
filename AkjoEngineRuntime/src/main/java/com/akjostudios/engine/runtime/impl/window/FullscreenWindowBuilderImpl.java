@@ -2,9 +2,12 @@ package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
+import com.akjostudios.engine.api.logging.LoggerProvider;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorProvider;
 import com.akjostudios.engine.api.monitor.MonitorResolution;
+import com.akjostudios.engine.api.render.backend.RenderBackend;
+import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.Window;
@@ -22,11 +25,16 @@ public final class FullscreenWindowBuilderImpl extends AbstractWindowBuilder imp
             @NotNull String title,
             @NotNull MonitorProvider monitor,
             boolean vsync,
-            @NotNull FrameScheduler renderScheduler,
+            @NotNull RenderBackend backend,
             @NotNull Threading threading,
-            @NotNull EventBus events
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull EventBus events,
+            @NotNull AssetManager assets,
+            @NotNull LoggerProvider loggerProvider
     ) {
-        super(title, monitor, vsync, renderScheduler, threading, events);
+        super(title, monitor, vsync, backend,
+                threading, renderScheduler, events, assets, loggerProvider
+        );
     }
 
     /**

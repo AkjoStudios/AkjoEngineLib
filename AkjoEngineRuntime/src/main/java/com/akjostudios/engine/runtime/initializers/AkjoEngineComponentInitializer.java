@@ -35,6 +35,6 @@ public class AkjoEngineComponentInitializer implements ApplicationContextInitial
             count++;
         }
 
-        log.info("✅ Found and successfully registered {} component(s).", count);
+        log.info("✅  Found and successfully registered {} component(s).", count);
     }
 }

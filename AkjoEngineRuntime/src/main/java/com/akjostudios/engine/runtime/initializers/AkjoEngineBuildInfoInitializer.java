@@ -35,7 +35,7 @@ public class AkjoEngineBuildInfoInitializer implements ApplicationContextInitial
             context.getEnvironment().getSystemProperties().put("spring.application.name", artifact);
             context.getEnvironment().getSystemProperties().put("spring.application.version", version);
             context.getEnvironment().getSystemProperties().put("engine.version", engineVersion);
-            log.info("✅ Loaded artifact '{}' with version '{}' using engine version '{}'.", artifact, version, engineVersion);
+            log.info("✅  Loaded artifact '{}' with version '{}' using engine version '{}'.", artifact, version, engineVersion);
         } catch (IOException e) {
             throw new IllegalStateException("❗ Failed to load build-info.properties! This is likely a bug in the engine - please report it using the issue tracker.", e);
         }

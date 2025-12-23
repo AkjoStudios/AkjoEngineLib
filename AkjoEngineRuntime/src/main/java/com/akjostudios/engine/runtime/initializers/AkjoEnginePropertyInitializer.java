@@ -69,6 +69,6 @@ public class AkjoEnginePropertyInitializer implements ApplicationContextInitiali
             throw new IllegalStateException("❗ Failed to load or parse " + CONFIG_FILE_NAME + ". Please ensure it is valid YAML.", e);
         }
 
-        log.info("✅ Application properties initialized and validated successfully.");
+        log.info("✅  Application properties initialized and validated successfully.");
     }
 }

@@ -140,7 +140,7 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
     void requestRender();
 
     /**
-     * Registers a callback executed on the render thread when this window is about to be presented.
+     * Registers a callback executed on the render thread when this window is rendered.
      */
     @NotNull Cancellable onRender(@NotNull Runnable callback);
 
@@ -180,7 +180,7 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      */
     void __engine_renderCanvas(
             @NotNull Object token
-    ) throws IllegalCallerException, IllegalStateException;
+    ) throws Exception, IllegalCallerException, IllegalStateException;
 
     /**
      * Destroys this window.

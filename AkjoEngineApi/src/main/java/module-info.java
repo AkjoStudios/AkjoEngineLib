@@ -34,7 +34,13 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.window.builder;
     exports com.akjostudios.engine.api.window.events;
 
+    exports com.akjostudios.engine.api.render;
+    exports com.akjostudios.engine.api.render.backend;
+    exports com.akjostudios.engine.api.render.command;
+
     exports com.akjostudios.engine.api.assets;
+    exports com.akjostudios.engine.api.assets.texture;
 
     exports com.akjostudios.engine.res;
+    exports com.akjostudios.engine.api.render.context;
 }

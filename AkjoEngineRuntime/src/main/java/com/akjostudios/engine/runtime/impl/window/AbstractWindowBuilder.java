@@ -1,8 +1,11 @@
 package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.event.EventBus;
+import com.akjostudios.engine.api.logging.LoggerProvider;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorProvider;
+import com.akjostudios.engine.api.render.backend.RenderBackend;
+import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.Window;
@@ -20,9 +23,14 @@ public abstract class AbstractWindowBuilder {
     protected final MonitorProvider monitor;
     protected final boolean vsync;
 
-    private final FrameScheduler renderScheduler;
+    private final RenderBackend backend;
+
     private final Threading threading;
+    private final FrameScheduler renderScheduler;
     private final EventBus events;
+    private final AssetManager assets;
+
+    private final LoggerProvider loggerProvider;
 
     protected WindowRegistryHook hook;
 
@@ -83,6 +91,11 @@ public abstract class AbstractWindowBuilder {
         GLFW.glfwMakeContextCurrent(handle);
         GL.createCapabilities();
         GLFW.glfwSwapInterval(vsync ? 1 : 0);
-        return new WindowImpl(handle, renderScheduler, threading, events);
+        return new WindowImpl(
+                handle, backend,
+                threading, renderScheduler, events, assets,
+                loggerProvider.retrieve("Window[" + handle + "]"),
+                loggerProvider.retrieve(backend.getClass().getSimpleName())
+        );
     }
 }

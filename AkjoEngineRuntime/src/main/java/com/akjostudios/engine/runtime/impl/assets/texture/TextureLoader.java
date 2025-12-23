@@ -1,6 +1,7 @@
 package com.akjostudios.engine.runtime.impl.assets.texture;
 
-import com.akjostudios.engine.api.assets.Texture;
+import com.akjostudios.engine.api.assets.texture.Texture;
+import com.akjostudios.engine.api.assets.texture.TextureResolution;
 import com.akjostudios.engine.api.resource.asset.AssetLoader;
 import com.akjostudios.engine.api.resource.file.FileSystem;
 import com.akjostudios.engine.api.resource.file.ResourcePath;
@@ -47,7 +48,7 @@ public final class TextureLoader implements AssetLoader<Texture, TextureLoader.D
 
     @Override
     public @NotNull Texture createAsset(@NotNull ResourcePath path, @NotNull TextureLoader.Data data) {
-        OpenGLUtil.checkContext("create texture at \"" + path + "\"");
+        OpenGLUtil.contextFail("create texture at \"" + path + "\"");
 
         int id = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, id);
@@ -65,6 +66,6 @@ public final class TextureLoader implements AssetLoader<Texture, TextureLoader.D
 
         STBImage.stbi_image_free(data.pixels());
 
-        return new TextureImpl(path, id, data.width(), data.height());
+        return new TextureImpl(path, id, new TextureResolution(data.width(), data.height()));
     }
 }

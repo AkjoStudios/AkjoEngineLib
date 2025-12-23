@@ -1,7 +1,10 @@
 package com.akjostudios.engine.api.window;
 
 import com.akjostudios.engine.api.event.EventBus;
+import com.akjostudios.engine.api.logging.LoggerProvider;
 import com.akjostudios.engine.api.monitor.MonitorProvider;
+import com.akjostudios.engine.api.render.backend.RenderBackendProvider;
+import com.akjostudios.engine.api.resource.asset.AssetManager;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.builder.WindowBuilder;
@@ -208,9 +211,12 @@ public interface WindowRegistry {
      */
     void __engine_init(
             @NotNull Object token,
-            @NotNull FrameScheduler renderScheduler,
+            @NotNull RenderBackendProvider backendProvider,
             @NotNull Threading threading,
-            @NotNull EventBus events
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull EventBus events,
+            @NotNull AssetManager assets,
+            @NotNull LoggerProvider loggerProvider
     ) throws IllegalCallerException, IllegalStateException;
 
     /**

@@ -8,12 +8,14 @@ import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.events.WindowBeforeSwapBuffersEvent;
+import com.akjostudios.engine.res.ShaderResources;
 import com.akjostudios.engine.runtime.components.EventListenerRegistrar;
 import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
 import com.akjostudios.engine.runtime.impl.event.EventBusImpl;
 import com.akjostudios.engine.runtime.impl.lifecycle.LifecycleImpl;
 import com.akjostudios.engine.runtime.impl.monitor.MonitorRegistryImpl;
+import com.akjostudios.engine.runtime.impl.render.backend.CanvasRenderBackend;
 import com.akjostudios.engine.runtime.impl.resource.asset.AssetManagerImpl;
 import com.akjostudios.engine.runtime.impl.resource.file.RouterFileSystem;
 import com.akjostudios.engine.runtime.impl.scheduling.FrameSchedulerImpl;
@@ -154,6 +156,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             context.__engine_setEventBus(
                     EngineTokens.token(),
                     new EventBusImpl(
+                            context.lifecycle(),
                             threading,
                             context.scheduler(),
                             context.logger(EVENT_LOGGER_NAME)
@@ -235,11 +238,17 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 // Initialize window registry
                 context.windows().__engine_init(
                         EngineTokens.token(),
-                        context.scheduler().render(),
+                        CanvasRenderBackend::new,
                         context.threading(),
-                        context.events()
+                        context.scheduler().render(),
+                        context.events(),
+                        context.assets(),
+                        context::logger
                 );
             });
+
+            // Preload all necessary shaders
+            renderMailbox.postOrThrow(() -> context.assets().preload(ShaderResources.SPRITE));
 
             // Prepare everything on render thread loop
             context.scheduler().render().__engine_addPostFrameTask(
