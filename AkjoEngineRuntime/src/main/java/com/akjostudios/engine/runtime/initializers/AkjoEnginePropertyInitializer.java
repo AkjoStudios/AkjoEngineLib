@@ -1,6 +1,6 @@
 package com.akjostudios.engine.runtime.initializers;
 
-import com.akjostudios.engine.runtime.AkjoEngineAppProperties;
+import com.akjostudios.engine.runtime.AkjoEngineProjectProperties;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,14 +57,14 @@ public class AkjoEnginePropertyInitializer implements ApplicationContextInitiali
                 .configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, true)
                 .registerModule(new Jdk8Module());
 
-        AkjoEngineAppProperties appProperties;
+        AkjoEngineProjectProperties appProperties;
         try (InputStream is = resource.openStream()) {
             if (is.available() == 0) {
-                appProperties = new AkjoEngineAppProperties();
+                appProperties = new AkjoEngineProjectProperties();
             } else {
-                appProperties = yamlMapper.readValue(is, AkjoEngineAppProperties.class);
+                appProperties = yamlMapper.readValue(is, AkjoEngineProjectProperties.class);
             }
-            context.registerBean(AkjoEngineAppProperties.class, () -> appProperties);
+            context.registerBean(AkjoEngineProjectProperties.class, () -> appProperties);
         } catch (Exception e) {
             throw new IllegalStateException("❗ Failed to load or parse " + CONFIG_FILE_NAME + ". Please ensure it is valid YAML.", e);
         }

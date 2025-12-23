@@ -1,6 +1,6 @@
 package com.akjostudios.engine.runtime.tools;
 
-import com.akjostudios.engine.runtime.AkjoEngineAppProperties;
+import com.akjostudios.engine.runtime.AkjoEngineProjectProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.module.jsonSchema.jakarta.JsonSchema;
@@ -19,7 +19,7 @@ public class AkjoEngineAppPropertySchemaGen {
 
         ObjectMapper mapper = new ObjectMapper().registerModule(new Jdk8Module());
         JsonSchemaGenerator gen = new JsonSchemaGenerator(mapper);
-        JsonSchema schema = gen.generateSchema(AkjoEngineAppProperties.class);
+        JsonSchema schema = gen.generateSchema(AkjoEngineProjectProperties.class);
         mapper.writerWithDefaultPrettyPrinter().writeValue(out.toFile(), schema);
         System.out.println("Schema generated at: " + out.toAbsolutePath());
     }

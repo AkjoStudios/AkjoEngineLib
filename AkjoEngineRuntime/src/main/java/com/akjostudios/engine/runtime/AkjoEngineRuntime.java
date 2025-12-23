@@ -53,7 +53,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
 
     private final IAkjoApplication application;
     private final AkjoApplicationContext context;
-    private final AkjoEngineAppProperties properties;
+    private final AkjoEngineProjectProperties properties;
     private final Map<String, Object> systemProperties;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -113,8 +113,8 @@ public class AkjoEngineRuntime implements SmartLifecycle {
 
             Thread.UncaughtExceptionHandler exceptionHandler = new AkjoEngineExceptionHandler(
                     context.logger(CRASH_LOGGER_NAME),
-                    properties.appName(),
-                    properties.appVersion(),
+                    properties.projectName(),
+                    properties.projectVersion(),
                     systemProperties.get(ENGINE_VERSION_PROPERTY).toString(),
                     thread -> {
                         thread.interrupt();

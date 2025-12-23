@@ -11,10 +11,10 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor(onConstructor_ = @JsonCreator)
 @AllArgsConstructor
 @Accessors(chain = true, fluent = true)
-public class AkjoEngineAppProperties {
-    @JsonProperty(value = "appName")
-    private String appName = "Untitled App";
+public class AkjoEngineProjectProperties {
+    @JsonProperty(value = "name")
+    private String projectName = "Untitled Project";
 
-    @JsonProperty(value = "appVersion")
-    private String appVersion = "1.0.0";
+    @JsonProperty(value = "version")
+    private String projectVersion = "1.0.0";
 }

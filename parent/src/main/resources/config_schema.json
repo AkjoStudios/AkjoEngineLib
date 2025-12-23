@@ -1,11 +1,11 @@
 {
   "type" : "object",
-  "id" : "urn:jsonschema:com:akjostudios:engine:runtime:AkjoEngineAppProperties",
+  "id" : "urn:jsonschema:com:akjostudios:engine:runtime:AkjoEngineProjectProperties",
   "properties" : {
-    "appName" : {
+    "name" : {
       "type" : "string"
     },
-    "appVersion" : {
+    "version" : {
       "type" : "string"
     }
   }

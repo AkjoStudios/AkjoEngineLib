@@ -1,7 +1,7 @@
 package com.akjostudios.engine.runtime.initializers;
 
 import com.akjostudios.engine.api.IAkjoApplication;
-import com.akjostudios.engine.runtime.AkjoEngineAppProperties;
+import com.akjostudios.engine.runtime.AkjoEngineProjectProperties;
 import com.akjostudios.engine.runtime.AkjoEngineRuntime;
 import com.akjostudios.engine.runtime.components.EventListenerRegistrar;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
@@ -30,7 +30,7 @@ public class AkjoEngineRuntimeInitializer implements ApplicationContextInitializ
         context.registerBean(AkjoEngineRuntime.class, () -> {
             IAkjoApplication application = resolveApplication(context);
             AkjoApplicationContext appContext = context.getBean(AkjoApplicationContext.class);
-            AkjoEngineAppProperties appProperties = context.getBean(AkjoEngineAppProperties.class);
+            AkjoEngineProjectProperties appProperties = context.getBean(AkjoEngineProjectProperties.class);
             EventListenerRegistrar eventListenerRegistrar = context.getBean(EventListenerRegistrar.class);
 
             return new AkjoEngineRuntime(
