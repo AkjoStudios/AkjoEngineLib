@@ -1,4 +1,4 @@
-package com.akjostudios.engine.runtime.commands.render;
+package com.akjostudios.engine.runtime.impl.render.commands;
 
 import com.akjostudios.engine.api.common.base.color.IColor;
 import org.jetbrains.annotations.NotNull;

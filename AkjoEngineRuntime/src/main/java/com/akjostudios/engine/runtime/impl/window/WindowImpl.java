@@ -14,10 +14,11 @@ import com.akjostudios.engine.api.scheduling.FrameScheduler;
 import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.*;
 import com.akjostudios.engine.api.window.events.*;
-import com.akjostudios.engine.runtime.commands.render.ClearCommand;
 import com.akjostudios.engine.runtime.impl.canvas.CanvasImpl;
 import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
 import com.akjostudios.engine.runtime.impl.monitor.MonitorImpl;
+import com.akjostudios.engine.runtime.impl.render.backend.CanvasRenderBackend;
+import com.akjostudios.engine.runtime.impl.render.backend.RenderBackend;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
@@ -43,6 +44,7 @@ public final class WindowImpl implements Window {
     private final long handle;
 
     private final CanvasImpl canvas;
+    private final RenderBackend backend;
 
     private final FrameScheduler renderScheduler;
     private final Threading threading;
@@ -79,6 +81,7 @@ public final class WindowImpl implements Window {
             renderRequested.set(true);
             threading.requestRender();
         });
+        this.backend = new CanvasRenderBackend();
 
         this.renderScheduler = renderScheduler;
         this.threading = threading;
@@ -567,6 +570,7 @@ public final class WindowImpl implements Window {
     @Override
     public void requestRender() {
         renderRequested.set(true);
+        threading.requestRender();
     }
 
     @Override
@@ -741,6 +745,16 @@ public final class WindowImpl implements Window {
         GLFW.glfwSetWindowContentScaleCallback(handle, this.contentScaleCallback.get());
     }
 
+    private void runRenderCallbacks() {
+        renderCallbacks.forEach(callback -> {
+            try {
+                callback.run();
+            } catch (Throwable t) {
+                log.error("An error occurred inside a render callback!", t);
+            }
+        });
+    }
+
     /**
      * Swaps the buffers of this window.
      * @apiNote Must be called by the runtime implementation of the engine AND from the render thread.
@@ -801,27 +815,10 @@ public final class WindowImpl implements Window {
             throw new IllegalStateException("❗ The canvas of a window must be rendered on the render thread!");
         }
 
-        renderCallbacks.forEach(callback -> {
-            try {
-                callback.run();
-            } catch (Throwable t) {
-                log.error("An error occurred inside a render callback!", t);
-            }
-        });
+        runRenderCallbacks();
 
-        final ClearCommand[] lastClear = { null };
-
-        canvas.drainTo(command -> {
-            if (command instanceof ClearCommand clear) {
-                lastClear[0] = clear;
-            } else {
-                command.execute();
-            }
-        });
-
-        if (lastClear[0] != null) {
-            lastClear[0].execute();
-        }
+        canvas.drainTo(backend::execute);
+        backend.flush();
     }
 
     /**

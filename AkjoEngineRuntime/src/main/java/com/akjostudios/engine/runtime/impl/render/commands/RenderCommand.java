@@ -1,4 +1,4 @@
-package com.akjostudios.engine.runtime.commands.render;
+package com.akjostudios.engine.runtime.impl.render.commands;
 
 import org.jetbrains.annotations.NotNull;
 

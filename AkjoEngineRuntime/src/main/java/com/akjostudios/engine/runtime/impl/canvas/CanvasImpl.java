@@ -2,8 +2,8 @@ package com.akjostudios.engine.runtime.impl.canvas;
 
 import com.akjostudios.engine.api.canvas.Canvas;
 import com.akjostudios.engine.api.common.base.color.IColor;
-import com.akjostudios.engine.runtime.commands.render.ClearCommand;
-import com.akjostudios.engine.runtime.commands.render.RenderCommand;
+import com.akjostudios.engine.runtime.impl.render.commands.ClearCommand;
+import com.akjostudios.engine.runtime.impl.render.commands.RenderCommand;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
