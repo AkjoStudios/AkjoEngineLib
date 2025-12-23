@@ -756,11 +756,11 @@ public final class WindowImpl implements Window {
 
         final ClearCommand[] lastClear = { null };
 
-        // TODO: add more commands to satisfy warning
         canvas.drainTo(command -> {
-            switch (command) {
-                case ClearCommand clear -> lastClear[0] = clear;
-                default -> command.execute();
+            if (command instanceof ClearCommand clear) {
+                lastClear[0] = clear;
+            } else {
+                command.execute();
             }
         });
 
