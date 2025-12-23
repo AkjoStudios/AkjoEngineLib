@@ -172,21 +172,18 @@ public class AkjoEngineRuntime implements SmartLifecycle {
             ));
 
             // Initialize virtual file system
-            RouterFileSystem fs = new RouterFileSystem().setup(
+            context.__engine_setFileSystem(EngineTokens.token(), new RouterFileSystem().setup(
                     ROOT_BASE_PATH, ASSETS_PATH,
                     ENGINE_MOUNT, ENGINE_PATH,
                     application.getClass()
-            );
-            context.__engine_setFileSystem(EngineTokens.token(), fs);
+            ));
 
             // Initialize asset manager
-            AssetManagerImpl assetManager = new AssetManagerImpl(
+            context.__engine_setAssetManager(EngineTokens.token(), new AssetManagerImpl(
                     context.fs(),
                     context.scheduler(),
                     exceptionHandler
-            );
-            assetManager.setup();
-            context.__engine_setAssetManager(EngineTokens.token(), assetManager);
+            ).setup());
 
             // Initialize monitor registry
             context.__engine_setMonitors(EngineTokens.token(), new MonitorRegistryImpl());

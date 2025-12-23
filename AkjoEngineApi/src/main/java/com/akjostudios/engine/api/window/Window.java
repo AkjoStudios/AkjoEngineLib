@@ -81,6 +81,10 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      */
     void resolution(@NotNull WindowResolutionProvider provider);
     /**
+     * @return The current framebuffer resolution of this window.
+     */
+    @NotNull FramebufferResolution framebufferResolution();
+    /**
      * @return The current scale of this window.
      */
     @Nullable WindowContentScale scale();

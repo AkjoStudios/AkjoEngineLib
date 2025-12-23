@@ -47,10 +47,12 @@ public final class AssetManagerImpl implements AssetManager, Disposable {
         );
     }
 
-    public void setup() {
+    public @NotNull AssetManagerImpl setup() {
         registerLoader(Text.class, new TextLoader());
         registerLoader(Texture.class, new TextureLoader());
         registerLoader(Shader.class, new ShaderLoader());
+
+        return this;
     }
 
     private <T extends Asset, D> void registerLoader(@NotNull Class<T> type, @NotNull AssetLoader<T, D> loader) {

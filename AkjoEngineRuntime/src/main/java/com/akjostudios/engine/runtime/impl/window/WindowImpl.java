@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 
@@ -54,6 +55,7 @@ public final class WindowImpl implements Window {
 
     private final AtomicReference<GLFWWindowPosCallback> posCallback = new AtomicReference<>();
     private final AtomicReference<GLFWWindowSizeCallback> sizeCallback = new AtomicReference<>();
+    private final AtomicReference<GLFWFramebufferSizeCallback> framebufferSizeCallback = new AtomicReference<>();
     private final AtomicReference<GLFWWindowCloseCallback> closeCallback = new AtomicReference<>();
     private final AtomicReference<GLFWWindowRefreshCallback> refreshCallback = new AtomicReference<>();
     private final AtomicReference<GLFWWindowFocusCallback> focusCallback = new AtomicReference<>();
@@ -88,6 +90,7 @@ public final class WindowImpl implements Window {
                     queryPosition(),
                     queryMonitor(),
                     queryResolution(),
+                    queryFramebufferResolution(),
                     queryScale(),
                     queryVisibility(),
                     queryOptions(),
@@ -127,7 +130,8 @@ public final class WindowImpl implements Window {
             GLFW.glfwSetWindowTitle(handle, name);
 
             WindowState previous = state.getAndUpdate(current -> new WindowState(
-                    name, current.position(), current.monitor(), current.resolution(),
+                    name, current.position(), current.monitor(),
+                    current.resolution(), current.framebufferResolution(),
                     current.scale(), current.visibility(), current.options(),
                     current.focused(), current.requestedAttention()
             ));
@@ -172,7 +176,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), position, current.monitor(), current.resolution(),
+                        current.name(), position, current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), current.visibility(), current.options(),
                         current.focused(), current.requestedAttention()
                 );
@@ -208,7 +213,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), windowPosition, current.monitor(), current.resolution(),
+                        current.name(), windowPosition, current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), current.visibility(), current.options(),
                         current.focused(), current.requestedAttention()
                 );
@@ -299,7 +305,8 @@ public final class WindowImpl implements Window {
             events.publish(new WindowMonitorChangedEvent(this, current.monitor()));
 
             return new WindowState(
-                    current.name(), current.position(), newMonitor, current.resolution(),
+                    current.name(), current.position(), newMonitor,
+                    current.resolution(), current.framebufferResolution(),
                     current.scale(), current.visibility(), current.options(),
                     current.focused(), current.requestedAttention()
             );
@@ -331,6 +338,25 @@ public final class WindowImpl implements Window {
     }
 
     @Override
+    public @NotNull FramebufferResolution framebufferResolution() {
+        if (state.get() == null) { return queryFramebufferResolution(); }
+        return state.get().framebufferResolution();
+    }
+
+    private @NotNull FramebufferResolution queryFramebufferResolution() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer pwidth = stack.mallocInt(1);
+            IntBuffer pheight = stack.mallocInt(1);
+
+            GLFW.glfwGetFramebufferSize(handle, pwidth, pheight);
+
+            return new FramebufferResolution(pwidth.get(0), pheight.get(0));
+        } catch (Exception _) {
+            return new FramebufferResolution(0, 0);
+        }
+    }
+
+    @Override
     public void resolution(@NotNull WindowResolution resolution) {
         renderScheduler.immediate(() -> {
             if (!GLFW.glfwInit()) { return; }
@@ -340,7 +366,8 @@ public final class WindowImpl implements Window {
             state.updateAndGet(current -> {
                 if (current == null) { return null; }
                 return new WindowState(
-                        current.name(), current.position(), current.monitor(), resolution,
+                        current.name(), current.position(), current.monitor(),
+                        resolution, current.framebufferResolution(),
                         current.scale(), current.visibility(), current.options(),
                         current.focused(), current.requestedAttention()
                 );
@@ -437,7 +464,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.name(), current.position(), current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), visibility, current.options(),
                         current.focused(), current.requestedAttention()
                 );
@@ -470,7 +498,8 @@ public final class WindowImpl implements Window {
 
             GLFW.glfwSetWindowAttrib(handle, GLFW.GLFW_RESIZABLE, resizable ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
             WindowState previous = state.getAndUpdate(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
+                    current.name(), current.position(), current.monitor(),
+                    current.resolution(), current.framebufferResolution(),
                     current.scale(), current.visibility(), new WindowOptions(
                             resizable, current.options().decorated(), current.options().floating()
                     ), current.focused(), current.requestedAttention()
@@ -506,7 +535,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.name(), current.position(), current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), current.visibility(), current.options(),
                         true, false
                 );
@@ -525,7 +555,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.name(), current.position(), current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), current.visibility(), current.options(),
                         current.focused(), true
                 );
@@ -588,7 +619,8 @@ public final class WindowImpl implements Window {
 
         this.posCallback.set(GLFWWindowPosCallback.create((_, x, y) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
-                    current.name(), new ScreenPosition(x, y), current.monitor(), current.resolution(),
+                    current.name(), new ScreenPosition(x, y), current.monitor(),
+                    current.resolution(), current.framebufferResolution(),
                     current.scale(), current.visibility(), current.options(),
                     current.focused(), current.requestedAttention()
             ));
@@ -602,7 +634,8 @@ public final class WindowImpl implements Window {
 
         this.sizeCallback.set(GLFWWindowSizeCallback.create((_, width, height) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), new WindowResolution(width, height),
+                    current.name(), current.position(), current.monitor(),
+                    new WindowResolution(width, height), current.framebufferResolution(),
                     current.scale(), current.visibility(), current.options(),
                     current.focused(), current.requestedAttention()
             ));
@@ -612,6 +645,19 @@ public final class WindowImpl implements Window {
             events.publish(new WindowResizedEvent(this, previous.resolution()));
         }));
         GLFW.glfwSetWindowSizeCallback(handle, this.sizeCallback.get());
+
+        this.framebufferSizeCallback.set(GLFWFramebufferSizeCallback.create((_, fbWidth, fbHeight) -> {
+            WindowState previous = state.getAndUpdate(current -> new WindowState(
+                    current.name(), current.position(), current.monitor(),
+                    current.resolution(), new FramebufferResolution(fbWidth, fbHeight),
+                    current.scale(), current.visibility(), current.options(),
+                    current.focused(), current.requestedAttention()
+            ));
+            renderRequested.set(true);
+            threading.requestRender();
+            events.publish(new FramebufferResizedEvent(this, previous.framebufferResolution()));
+        }));
+        GLFW.glfwSetFramebufferSizeCallback(handle, this.framebufferSizeCallback.get());
 
         this.closeCallback.set(GLFWWindowCloseCallback.create(
                 (_) -> events.publish(new WindowCloseRequestedEvent(this))
@@ -629,7 +675,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.name(), current.position(), current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), current.visibility(), current.options(),
                         focused, false
                 );
@@ -644,7 +691,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.name(), current.position(), current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), new WindowVisibility(
                                 iconified ? WindowVisibility.Type.MINIMIZED : WindowVisibility.Type.REGULAR,
                                 current.visibility().visible()
@@ -663,7 +711,8 @@ public final class WindowImpl implements Window {
                 if (current == null) { return null; }
 
                 return new WindowState(
-                        current.name(), current.position(), current.monitor(), current.resolution(),
+                        current.name(), current.position(), current.monitor(),
+                        current.resolution(), current.framebufferResolution(),
                         current.scale(), new WindowVisibility(
                                 maximized ? WindowVisibility.Type.MAXIMIZED : WindowVisibility.Type.REGULAR,
                                 current.visibility().visible()
@@ -679,7 +728,8 @@ public final class WindowImpl implements Window {
 
         this.contentScaleCallback.set(GLFWWindowContentScaleCallback.create((_, scaleX, scaleY) -> {
             WindowState previous = state.getAndUpdate(current -> new WindowState(
-                    current.name(), current.position(), current.monitor(), current.resolution(),
+                    current.name(), current.position(), current.monitor(),
+                    current.resolution(), current.framebufferResolution(),
                     new WindowContentScale(scaleX, scaleY), current.visibility(), current.options(),
                     current.focused(), current.requestedAttention()
             ));
@@ -712,8 +762,13 @@ public final class WindowImpl implements Window {
         } else {
             GL.setCapabilities(capabilities);
         }
-        events.publish(new WindowBeforeSwapBuffersEvent(this), EventLane.RENDER);
 
+        FramebufferResolution fbResolution = framebufferResolution();
+        if (fbResolution.width() != 0 && fbResolution.height() != 0) {
+            GL11.glViewport(0, 0, fbResolution.width(), fbResolution.height());
+        }
+
+        events.publish(new WindowBeforeSwapBuffersEvent(this), EventLane.RENDER);
         GLFW.glfwSwapBuffers(handle);
         events.publish(new WindowAfterSwapBuffersEvent(this), EventLane.RENDER);
     }
@@ -798,6 +853,11 @@ public final class WindowImpl implements Window {
         if (this.sizeCallback.get() != null) {
             this.sizeCallback.get().free();
             this.sizeCallback.set(null);
+        }
+
+        if (this.framebufferSizeCallback.get() != null) {
+            this.framebufferSizeCallback.get().free();
+            this.framebufferSizeCallback.set(null);
         }
 
         if (this.closeCallback.get() != null) {
