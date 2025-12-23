@@ -53,6 +53,7 @@ public final class FullscreenWindowBuilderImpl extends AbstractWindowBuilder imp
         MonitorResolution finalResolution = resolvedMonitor.resolution();
 
         GLFW.glfwDefaultWindowHints();
+        GLFW.glfwWindowHint(GLFW.GLFW_SCALE_TO_MONITOR, GLFW.GLFW_TRUE);
 
         return createWindow(
                 resolvedMonitor,

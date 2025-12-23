@@ -272,6 +272,8 @@ public final class WindowImpl implements Window {
                         GLFWVidMode videoMode = GLFW.glfwGetVideoMode(monitor);
                         if (videoMode == null) { continue; }
                         GLFW.glfwGetMonitorPos(monitor, monitorX, monitorY);
+                        monitorWidth.put(0, videoMode.width());
+                        monitorHeight.put(0, videoMode.height());
                     }
 
                     int areaX1 = Math.max(windowX.get(0), monitorX.get(0));

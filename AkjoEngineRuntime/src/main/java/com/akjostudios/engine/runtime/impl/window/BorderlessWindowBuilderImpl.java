@@ -1,6 +1,7 @@
 package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.common.base.position.HasPosition2D;
+import com.akjostudios.engine.api.common.base.resolution.HasResolution;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
@@ -72,11 +73,12 @@ public final class BorderlessWindowBuilderImpl extends AbstractWindowBuilder imp
 
         MonitorWorkArea workArea = resolvedMonitor.screenArea();
         HasPosition2D positionProvider = workArea != null ? workArea : resolvedMonitor;
+        HasResolution resolutionProvider = workArea != null ? workArea : resolvedMonitor;
 
         final int finalX = Math.toIntExact(positionProvider.position().x());
         final int finalY = Math.toIntExact(positionProvider.position().y());
-        final int finalWidth = resolvedMonitor.resolution().width();
-        final int finalHeight = resolvedMonitor.resolution().height();
+        final int finalWidth = resolutionProvider.resolution().width();
+        final int finalHeight = resolutionProvider.resolution().height();
 
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
@@ -85,6 +87,7 @@ public final class BorderlessWindowBuilderImpl extends AbstractWindowBuilder imp
                 finalResizable ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE
         );
         GLFW.glfwWindowHint(GLFW.GLFW_FLOATING, GLFW.GLFW_FALSE);
+        GLFW.glfwWindowHint(GLFW.GLFW_SCALE_TO_MONITOR, GLFW.GLFW_TRUE);
 
         return createWindow(
                 resolvedMonitor,
