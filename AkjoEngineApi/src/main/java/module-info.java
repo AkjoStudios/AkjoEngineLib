@@ -14,6 +14,8 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.common.base.resolution;
     exports com.akjostudios.engine.api.common.base.scale;
     exports com.akjostudios.engine.api.common.base.size;
+    exports com.akjostudios.engine.api.common.base.color;
+    exports com.akjostudios.engine.api.common.base.area.screen;
 
     exports com.akjostudios.engine.api.context;
     exports com.akjostudios.engine.api.logging;
@@ -24,6 +26,7 @@ module AkjoEngineApi {
     exports com.akjostudios.engine.api.event;
     exports com.akjostudios.engine.api.resource.file;
     exports com.akjostudios.engine.api.resource.asset;
+    exports com.akjostudios.engine.api.canvas;
 
     exports com.akjostudios.engine.api.monitor;
     exports com.akjostudios.engine.api.monitor.events;

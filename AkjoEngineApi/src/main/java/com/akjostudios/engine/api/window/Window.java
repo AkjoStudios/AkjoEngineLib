@@ -1,10 +1,12 @@
 package com.akjostudios.engine.api.window;
 
+import com.akjostudios.engine.api.canvas.Canvas;
 import com.akjostudios.engine.api.common.base.HasName;
 import com.akjostudios.engine.api.common.base.area.screen.HasScreenArea;
 import com.akjostudios.engine.api.common.base.position.HasPosition2D;
 import com.akjostudios.engine.api.common.base.resolution.HasResolution;
 import com.akjostudios.engine.api.common.base.scale.HasScale2D;
+import com.akjostudios.engine.api.common.cancel.Cancellable;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorPosition;
 import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
@@ -18,6 +20,11 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      * @return The handle (or ID) of this window.
      */
     long handle();
+    /**
+     * @return The canvas for this window.
+     */
+    @NotNull Canvas canvas();
+
     /**
      * @return The name/title of this window.
      */
@@ -120,6 +127,16 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
     void requestAttention();
 
     /**
+     * Requests to render the canvas to the frame.
+     */
+    void requestRender();
+
+    /**
+     * Registers a callback executed on the render thread when this window is about to be presented.
+     */
+    @NotNull Cancellable onRender(@NotNull Runnable callback);
+
+    /**
      * @return If the window should close.
      */
     boolean shouldClose();
@@ -135,6 +152,25 @@ public interface Window extends HasName, HasPosition2D, HasResolution, HasScale2
      * @throws IllegalStateException When this method is not called from the render thread.
      */
     void __engine_swapBuffers(
+            @NotNull Object token
+    ) throws IllegalCallerException, IllegalStateException;
+
+    /**
+     * Consumes the render request for the canvas of this window.
+     * @apiNote Must be called by the runtime implementation of the engine
+     * @throws IllegalCallerException When this method is called externally.
+     */
+    boolean __engine_consumeRenderRequested(
+            @NotNull Object token
+    ) throws IllegalCallerException;
+
+    /**
+     * Renders the canvas for this window.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the render thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the render thread.
+     */
+    void __engine_renderCanvas(
             @NotNull Object token
     ) throws IllegalCallerException, IllegalStateException;
 

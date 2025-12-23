@@ -121,6 +121,15 @@ public final class ThreadingImpl implements Threading {
     @Override
     public boolean isAudioThread() { return Boolean.TRUE.equals(IS_AUDIO.get()); }
 
+    @Override
+    public void requestRender() { renderWaiter.wake(); }
+
+    @Override
+    public void requestLogic() { logicWaiter.wake(); }
+
+    @Override
+    public void requestAudio() { audioWaiter.wake(); }
+
     /**
      * Initializes the threading implementation.
      * @apiNote Must be called by the runtime implementation of the engine AND from the main thread AND only once.

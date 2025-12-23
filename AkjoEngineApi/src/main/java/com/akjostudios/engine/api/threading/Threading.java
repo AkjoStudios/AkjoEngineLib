@@ -36,6 +36,21 @@ public interface Threading {
     boolean isAudioThread();
 
     /**
+     * Wakes the render thread if it is currently parked.
+     */
+    void requestRender();
+
+    /**
+     * Wakes the logic thread if it is currently parked.
+     */
+    void requestLogic();
+
+    /**
+     * Wakes the audio thread if it is currently parked.
+     */
+    void requestAudio();
+
+    /**
      * Initializes the threading implementation.
      * @apiNote Must be called by the runtime implementation of the engine AND from the main thread AND only once.
      * @throws IllegalCallerException When this method is called externally.

@@ -4,8 +4,10 @@ import com.akjostudios.engine.api.common.base.position.HasPosition2D;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
+import com.akjostudios.engine.api.monitor.MonitorProvider;
 import com.akjostudios.engine.api.monitor.MonitorWorkArea;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
+import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowRegistryHook;
 import com.akjostudios.engine.api.window.WindowVisibility;
@@ -22,10 +24,14 @@ public final class BorderlessWindowBuilderImpl extends AbstractWindowBuilder imp
     private boolean resizable = true;
 
     public BorderlessWindowBuilderImpl(
-            @NotNull String title, @NotNull Monitor monitor, boolean vsync,
-            @NotNull FrameScheduler renderScheduler, @NotNull EventBus events
+            @NotNull String title,
+            @NotNull MonitorProvider monitor,
+            boolean vsync,
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull Threading threading,
+            @NotNull EventBus events
     ) {
-        super(title, monitor, vsync, renderScheduler, events);
+        super(title, monitor, vsync, renderScheduler, threading, events);
     }
 
     @Override
@@ -53,28 +59,39 @@ public final class BorderlessWindowBuilderImpl extends AbstractWindowBuilder imp
             throw new IllegalStateException("❗ BorderlessWindowBuilderImpl.build() can only be called from the render thread!");
         }
         if (this.hook == null) {
-            throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine - please report it using the issue tracker.");
+            throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine.");
         }
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("❗ Cannot build window without GLFW being initialized!");
         }
 
+        Monitor resolvedMonitor = resolveMonitor();
+
         final WindowVisibility finalVisibility = visibility;
         final boolean finalResizable = resizable;
 
-        MonitorWorkArea workArea = monitor.screenArea();
-        HasPosition2D positionProvider = workArea != null ? workArea : monitor;
+        MonitorWorkArea workArea = resolvedMonitor.screenArea();
+        HasPosition2D positionProvider = workArea != null ? workArea : resolvedMonitor;
+
         final int finalX = Math.toIntExact(positionProvider.position().x());
         final int finalY = Math.toIntExact(positionProvider.position().y());
-        final int finalWidth = monitor.resolution().width();
-        final int finalHeight = monitor.resolution().height();
+        final int finalWidth = resolvedMonitor.resolution().width();
+        final int finalHeight = resolvedMonitor.resolution().height();
 
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-        GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, finalResizable ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
+        GLFW.glfwWindowHint(
+                GLFW.GLFW_RESIZABLE,
+                finalResizable ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE
+        );
         GLFW.glfwWindowHint(GLFW.GLFW_FLOATING, GLFW.GLFW_FALSE);
 
-        return createWindow(finalX, finalY, finalWidth, finalHeight, finalVisibility);
+        return createWindow(
+                resolvedMonitor,
+                finalX, finalY,
+                finalWidth, finalHeight,
+                finalVisibility
+        );
     }
 
     /**

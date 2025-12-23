@@ -3,8 +3,10 @@ package com.akjostudios.engine.runtime.impl.window;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.monitor.Monitor;
+import com.akjostudios.engine.api.monitor.MonitorProvider;
 import com.akjostudios.engine.api.monitor.MonitorResolution;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
+import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowRegistryHook;
 import com.akjostudios.engine.api.window.builder.FullscreenWindowBuilder;
@@ -17,10 +19,14 @@ import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER
 
 public final class FullscreenWindowBuilderImpl extends AbstractWindowBuilder implements FullscreenWindowBuilder {
     public FullscreenWindowBuilderImpl(
-            @NotNull String title, @NotNull Monitor monitor, boolean vsync,
-            @NotNull FrameScheduler renderScheduler, @NotNull EventBus events
+            @NotNull String title,
+            @NotNull MonitorProvider monitor,
+            boolean vsync,
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull Threading threading,
+            @NotNull EventBus events
     ) {
-        super(title, monitor, vsync, renderScheduler, events);
+        super(title, monitor, vsync, renderScheduler, threading, events);
     }
 
     /**
@@ -36,16 +42,23 @@ public final class FullscreenWindowBuilderImpl extends AbstractWindowBuilder imp
             throw new IllegalStateException("❗ FullscreenWindowBuilderImpl.build() can only be called from the render thread!");
         }
         if (this.hook == null) {
-            throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine - please report it using the issue tracker.");
+            throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine.");
         }
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("❗ Cannot build window without GLFW being initialized!");
         }
 
-        MonitorResolution finalResolution = monitor.resolution();
+        Monitor resolvedMonitor = resolveMonitor();
+
+        MonitorResolution finalResolution = resolvedMonitor.resolution();
+
         GLFW.glfwDefaultWindowHints();
 
-        return createWindow(finalResolution.width(), finalResolution.height());
+        return createWindow(
+                resolvedMonitor,
+                finalResolution.width(),
+                finalResolution.height()
+        );
     }
 
     /**

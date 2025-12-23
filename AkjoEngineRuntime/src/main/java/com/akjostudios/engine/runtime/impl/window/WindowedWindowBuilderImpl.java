@@ -2,11 +2,9 @@ package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
-import com.akjostudios.engine.api.monitor.Monitor;
-import com.akjostudios.engine.api.monitor.MonitorPosition;
-import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
-import com.akjostudios.engine.api.monitor.ScreenPosition;
+import com.akjostudios.engine.api.monitor.*;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
+import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.*;
 import com.akjostudios.engine.api.window.builder.WindowedWindowBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -23,10 +21,14 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
     private WindowOptions options = WindowOptions.DEFAULT;
 
     public WindowedWindowBuilderImpl(
-            @NotNull String title, @NotNull Monitor monitor, boolean vsync,
-            @NotNull FrameScheduler renderScheduler, @NotNull EventBus events
-            ) {
-        super(title, monitor, vsync, renderScheduler, events);
+            @NotNull String title,
+            @NotNull MonitorProvider monitor,
+            boolean vsync,
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull Threading threading,
+            @NotNull EventBus events
+    ) {
+        super(title, monitor, vsync, renderScheduler, threading, events);
     }
 
     @Override
@@ -85,32 +87,52 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
     @Override
     public @NotNull Window build() throws ArithmeticException, IllegalStateException {
         if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
-            throw new IllegalStateException("❗ WindowedWindowBuilder.build() can only be called from the render thread!");
+            throw new IllegalStateException(
+                    "❗ WindowedWindowBuilder.build() can only be called from the render thread!"
+            );
         }
         if (hook == null) {
-            throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine - please report it using the issue tracker.");
+            throw new IllegalStateException("❗ Cannot build window without a registry hook! This is likely a bug in the engine.");
         }
         if (!GLFW.glfwInit()) {
             throw new IllegalStateException("❗ Cannot build window without GLFW being initialized!");
         }
 
-        final WindowResolution finalResolution = resolution.retrieve(monitor);
-        final MonitorPosition finalPosition = position.retrieve(monitor, finalResolution);
-        final WindowVisibility finalVisibility = visibility;
-        final WindowOptions finalOptions = options;
+        Monitor resolvedMonitor = monitor.get();
+        if (resolvedMonitor == null) {
+            throw new IllegalStateException("❗ Monitor is not available yet!");
+        }
 
-        final ScreenPosition basePosition = monitor.position();
+        final WindowResolution finalResolution = resolution.retrieve(resolvedMonitor);
+        final MonitorPosition finalPosition = position.retrieve(resolvedMonitor, finalResolution);
+
+        final ScreenPosition basePosition = resolvedMonitor.position();
         final int finalX = Math.toIntExact(Math.addExact(basePosition.x(), finalPosition.x()));
         final int finalY = Math.toIntExact(Math.addExact(basePosition.y(), finalPosition.y()));
-        final int finalWidth = finalResolution.width();
-        final int finalHeight = finalResolution.height();
+
+        final WindowOptions finalOptions = options;
+        final WindowVisibility finalVisibility = visibility;
 
         GLFW.glfwDefaultWindowHints();
-        GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, finalOptions.decorated() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-        GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, finalOptions.resizable() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-        GLFW.glfwWindowHint(GLFW.GLFW_FLOATING, finalOptions.floating() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
+        GLFW.glfwWindowHint(
+                GLFW.GLFW_DECORATED,
+                finalOptions.decorated() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE
+        );
+        GLFW.glfwWindowHint(
+                GLFW.GLFW_RESIZABLE,
+                finalOptions.resizable() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE
+        );
+        GLFW.glfwWindowHint(
+                GLFW.GLFW_FLOATING,
+                finalOptions.floating() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE
+        );
 
-        return createWindow(finalX, finalY, finalWidth, finalHeight, finalVisibility);
+        return createWindow(
+                resolvedMonitor,
+                finalX, finalY,
+                finalResolution.width(), finalResolution.height(),
+                finalVisibility
+        );
     }
 
     /**
@@ -129,14 +151,10 @@ public final class WindowedWindowBuilderImpl extends AbstractWindowBuilder imple
 
     @Override
     public String toString() {
-        final WindowResolution finalResolution = resolution.retrieve(monitor);
-        final MonitorPosition finalPosition = position.retrieve(monitor, finalResolution);
         return "WindowedWindowBuilder(" +
                 "title='" + title + "'" +
-                ", monitor=" + monitor +
+                ", monitor=" + monitor.get() +
                 ", vsync=" + vsync +
-                ", resolution=" + finalResolution +
-                ", position=" + finalPosition +
                 ", visibility=" + visibility +
                 ", options=" + options +
                 ")";

@@ -1,14 +1,22 @@
 package com.akjostudios.engine.runtime.impl.window;
 
+import com.akjostudios.engine.api.canvas.Canvas;
+import com.akjostudios.engine.api.common.cancel.Cancellable;
 import com.akjostudios.engine.api.event.EventBus;
+import com.akjostudios.engine.api.event.EventLane;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
+import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.monitor.Monitor;
 import com.akjostudios.engine.api.monitor.MonitorPosition;
 import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
+import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.*;
 import com.akjostudios.engine.api.window.events.*;
+import com.akjostudios.engine.runtime.commands.render.ClearCommand;
+import com.akjostudios.engine.runtime.impl.canvas.CanvasImpl;
+import com.akjostudios.engine.runtime.impl.logging.LoggerImpl;
 import com.akjostudios.engine.runtime.impl.monitor.MonitorImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,15 +28,27 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.akjostudios.engine.runtime.impl.threading.ThreadingImpl.RENDER_THREAD_NAME;
 
 public final class WindowImpl implements Window {
+    private final Logger log;
+
     private final long handle;
+
+    private final CanvasImpl canvas;
+
     private final FrameScheduler renderScheduler;
+    private final Threading threading;
     private final EventBus events;
+
+    private final AtomicBoolean renderRequested = new AtomicBoolean(true);
+    private final List<Runnable> renderCallbacks = new CopyOnWriteArrayList<>();
 
     private final AtomicReference<WindowState> state = new AtomicReference<>();
 
@@ -43,10 +63,25 @@ public final class WindowImpl implements Window {
 
     private GLCapabilities capabilities;
 
-    public WindowImpl(long handle, @NotNull FrameScheduler renderScheduler, @NotNull EventBus events) {
+    public WindowImpl(
+            long handle,
+            @NotNull FrameScheduler renderScheduler,
+            @NotNull Threading threading,
+            @NotNull EventBus events
+    ) {
+        this.log = new LoggerImpl("Window[" + handle + "]");
+
         this.handle = handle;
+
+        this.canvas = new CanvasImpl(() -> {
+            renderRequested.set(true);
+            threading.requestRender();
+        });
+
         this.renderScheduler = renderScheduler;
+        this.threading = threading;
         this.events = events;
+
         this.renderScheduler.immediate(() -> {
             WindowState initState = new WindowState(
                     queryName(),
@@ -66,6 +101,9 @@ public final class WindowImpl implements Window {
 
     @Override
     public long handle() { return handle; }
+
+    @Override
+    public @NotNull Canvas canvas() { return canvas; }
 
     @Override
     public @NotNull String name() {
@@ -496,6 +534,33 @@ public final class WindowImpl implements Window {
     }
 
     @Override
+    public void requestRender() {
+        renderRequested.set(true);
+    }
+
+    @Override
+    public @NotNull Cancellable onRender(@NotNull Runnable callback) {
+        renderCallbacks.add(callback);
+        renderRequested.set(true);
+
+        return new Cancellable() {
+            private final AtomicBoolean cancelled = new AtomicBoolean(false);
+
+            @Override
+            public boolean cancel() {
+                if (!cancelled.compareAndSet(false, true)) {
+                    return false;
+                }
+                renderCallbacks.remove(callback);
+                return true;
+            }
+
+            @Override
+            public boolean isCancelled() { return cancelled.get(); }
+        };
+    }
+
+    @Override
     public boolean shouldClose() { return GLFW.glfwWindowShouldClose(handle); }
 
     @Override
@@ -542,6 +607,8 @@ public final class WindowImpl implements Window {
                     current.focused(), current.requestedAttention()
             ));
             updateMonitor();
+            renderRequested.set(true);
+            threading.requestRender();
             events.publish(new WindowResizedEvent(this, previous.resolution()));
         }));
         GLFW.glfwSetWindowSizeCallback(handle, this.sizeCallback.get());
@@ -552,7 +619,8 @@ public final class WindowImpl implements Window {
         GLFW.glfwSetWindowCloseCallback(handle, this.closeCallback.get());
 
         this.refreshCallback.set(GLFWWindowRefreshCallback.create((_) -> {
-            // TODO: Call draw method when it exists
+            renderRequested.set(true);
+            threading.requestRender();
         }));
         GLFW.glfwSetWindowRefreshCallback(handle, this.refreshCallback.get());
 
@@ -583,6 +651,8 @@ public final class WindowImpl implements Window {
                         ), current.options(), current.focused(), current.requestedAttention()
                 );
             });
+            renderRequested.set(true);
+            threading.requestRender();
             if (iconified) { events.publish(new WindowMinimizedEvent(this)); }
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
@@ -600,6 +670,8 @@ public final class WindowImpl implements Window {
                         ), current.options(), current.focused(), current.requestedAttention()
                 );
             });
+            renderRequested.set(true);
+            threading.requestRender();
             if (maximized) { events.publish(new WindowMaximizedEvent(this)); }
             else { events.publish(new WindowRestoredEvent(this)); }
         }));
@@ -612,6 +684,8 @@ public final class WindowImpl implements Window {
                     current.focused(), current.requestedAttention()
             ));
             updateMonitor();
+            renderRequested.set(true);
+            threading.requestRender();
             events.publish(new WindowContentScaleChangedEvent(this, previous.scale()));
         }));
         GLFW.glfwSetWindowContentScaleCallback(handle, this.contentScaleCallback.get());
@@ -638,10 +712,61 @@ public final class WindowImpl implements Window {
         } else {
             GL.setCapabilities(capabilities);
         }
-        events.publish(new WindowBeforeSwapBuffersEvent(this));
+        events.publish(new WindowBeforeSwapBuffersEvent(this), EventLane.RENDER);
 
         GLFW.glfwSwapBuffers(handle);
-        events.publish(new WindowAfterSwapBuffersEvent(this));
+        events.publish(new WindowAfterSwapBuffersEvent(this), EventLane.RENDER);
+    }
+
+    /**
+     * Consumes the render request for the canvas of this window.
+     * @apiNote Must be called by the runtime implementation of the engine
+     * @throws IllegalCallerException When this method is called externally.
+     */
+    @Override
+    public boolean __engine_consumeRenderRequested(
+            @NotNull Object token
+    ) throws IllegalCallerException {
+        EngineTokens.verify(token);
+        return renderRequested.getAndSet(false);
+    }
+
+    /**
+     * Renders the canvas for this window.
+     * @apiNote Must be called by the runtime implementation of the engine AND from the render thread.
+     * @throws IllegalCallerException When this method is called externally.
+     * @throws IllegalStateException When this method is not called from the render thread.
+     */
+    @Override
+    public void __engine_renderCanvas(
+            @NotNull Object token
+    ) throws IllegalCallerException, IllegalStateException {
+        EngineTokens.verify(token);
+        if (!Objects.equals(Thread.currentThread().getName(), RENDER_THREAD_NAME)) {
+            throw new IllegalStateException("❗ The canvas of a window must be rendered on the render thread!");
+        }
+
+        renderCallbacks.forEach(callback -> {
+            try {
+                callback.run();
+            } catch (Throwable t) {
+                log.error("An error occured inside a render callback!", t);
+            }
+        });
+
+        final ClearCommand[] lastClear = { null };
+
+        // TODO: add more commands to satisfy warning
+        canvas.drainTo(command -> {
+            switch (command) {
+                case ClearCommand clear -> lastClear[0] = clear;
+                default -> command.execute();
+            }
+        });
+
+        if (lastClear[0] != null) {
+            lastClear[0].execute();
+        }
     }
 
     /**

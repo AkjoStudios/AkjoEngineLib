@@ -2,7 +2,9 @@ package com.akjostudios.engine.runtime.impl.window;
 
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.monitor.Monitor;
+import com.akjostudios.engine.api.monitor.MonitorProvider;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
+import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.Window;
 import com.akjostudios.engine.api.window.WindowRegistryHook;
 import com.akjostudios.engine.api.window.WindowVisibility;
@@ -15,20 +17,22 @@ import org.lwjgl.opengl.GL;
 @SuppressWarnings("unused")
 public abstract class AbstractWindowBuilder {
     protected final String title;
-    protected final Monitor monitor;
+    protected final MonitorProvider monitor;
     protected final boolean vsync;
 
     private final FrameScheduler renderScheduler;
+    private final Threading threading;
     private final EventBus events;
 
     protected WindowRegistryHook hook;
 
     protected @NotNull Window createWindow(
+            @NotNull Monitor monitor,
             int finalX, int finalY,
             int finalWidth, int finalHeight,
             WindowVisibility finalVisibility
     ) {
-        long handle = getHandle(finalWidth, finalHeight, false);
+        long handle = getHandle(monitor, finalWidth, finalHeight, false);
         GLFW.glfwSetWindowPos(handle, finalX, finalY);
 
         Window window = makeContextCurrent(handle);
@@ -37,8 +41,11 @@ public abstract class AbstractWindowBuilder {
         return window;
     }
 
-    protected @NotNull Window createWindow(int finalWidth, int finalHeight) {
-        long handle = getHandle(finalWidth, finalHeight, true);
+    protected @NotNull Window createWindow(
+            @NotNull Monitor monitor,
+            int finalWidth, int finalHeight
+    ) {
+        long handle = getHandle(monitor, finalWidth, finalHeight, true);
 
         Window window = makeContextCurrent(handle);
         window.visibility(WindowVisibility.DEFAULT);
@@ -46,7 +53,19 @@ public abstract class AbstractWindowBuilder {
         return window;
     }
 
-    private long getHandle(int finalWidth, int finalHeight, boolean fullscreen) {
+    protected @NotNull Monitor resolveMonitor() {
+        Monitor resolvedMonitor = monitor.get();
+        if (resolvedMonitor == null) {
+            throw new IllegalStateException("❗ Monitor is not available yet!");
+        }
+        return resolvedMonitor;
+    }
+
+    private long getHandle(
+            @NotNull Monitor monitor,
+            int finalWidth, int finalHeight,
+            boolean fullscreen
+    ) {
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
 
         long handle = GLFW.glfwCreateWindow(
@@ -64,6 +83,6 @@ public abstract class AbstractWindowBuilder {
         GLFW.glfwMakeContextCurrent(handle);
         GL.createCapabilities();
         GLFW.glfwSwapInterval(vsync ? 1 : 0);
-        return new WindowImpl(handle, renderScheduler, events);
+        return new WindowImpl(handle, renderScheduler, threading, events);
     }
 }

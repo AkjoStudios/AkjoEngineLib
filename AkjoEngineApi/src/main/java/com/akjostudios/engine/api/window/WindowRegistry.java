@@ -3,18 +3,109 @@ package com.akjostudios.engine.api.window;
 import com.akjostudios.engine.api.event.EventBus;
 import com.akjostudios.engine.api.monitor.MonitorProvider;
 import com.akjostudios.engine.api.scheduling.FrameScheduler;
+import com.akjostudios.engine.api.threading.Threading;
 import com.akjostudios.engine.api.window.builder.WindowBuilder;
 import com.akjostudios.engine.api.window.builder.WindowedWindowBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings({"unused", "UnusedReturnValue"})
 public interface WindowRegistry {
     String DEFAULT_TITLE = "Untitled Window";
     WindowMode<WindowedWindowBuilder> DEFAULT_MODE = WindowMode.WINDOWED;
     boolean DEFAULT_VSYNC = true;
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    default @NotNull CompletableFuture<Window> create(
+            @NotNull MonitorProvider monitor
+    ) {
+        return create(DEFAULT_TITLE, DEFAULT_MODE, monitor, DEFAULT_VSYNC);
+    }
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    default <T extends WindowBuilder> @NotNull CompletableFuture<Window> create(
+            @NotNull WindowMode<T> mode,
+            @NotNull MonitorProvider monitor
+    ) {
+        return create(DEFAULT_TITLE, mode, monitor, DEFAULT_VSYNC);
+    }
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    default @NotNull CompletableFuture<Window> create(
+            @NotNull MonitorProvider monitor,
+            boolean vsync
+    ) {
+        return create(DEFAULT_TITLE, DEFAULT_MODE, monitor, vsync);
+    }
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    default @NotNull CompletableFuture<Window> create(
+            @NotNull String title,
+            @NotNull MonitorProvider monitor
+    ) {
+        return create(title, DEFAULT_MODE, monitor, DEFAULT_VSYNC);
+    }
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    default <T extends WindowBuilder> @NotNull CompletableFuture<Window> create(
+            @NotNull String title,
+            @NotNull WindowMode<T> mode,
+            @NotNull MonitorProvider monitor
+    ) {
+        return create(title, mode, monitor, DEFAULT_VSYNC);
+    }
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    default <T extends WindowBuilder> @NotNull CompletableFuture<Window> create(
+            @NotNull WindowMode<T> mode,
+            @NotNull MonitorProvider monitor,
+            boolean vsync
+    ) {
+        return create(DEFAULT_TITLE, mode, monitor, vsync);
+    }
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    default @NotNull CompletableFuture<Window> create(
+            @NotNull String title,
+            @NotNull MonitorProvider monitor,
+            boolean vsync
+    ) {
+        return create(title, DEFAULT_MODE, monitor, vsync);
+    }
+
+    /**
+     * @return A future that returns the window for the given parameters.
+     */
+    <T extends WindowBuilder> @NotNull CompletableFuture<Window> create(
+            @NotNull String title,
+            @NotNull WindowMode<T> mode,
+            @NotNull MonitorProvider monitor,
+            boolean vsync
+    );
+
+    /**
+     * @return A future that returns the window based on the given builder.
+     */
+    <T extends WindowBuilder> @NotNull CompletableFuture<Window> create(
+            @NotNull T builder
+    );
 
     /**
      * @throws IllegalArgumentException When the monitor is not available.
@@ -118,6 +209,7 @@ public interface WindowRegistry {
     void __engine_init(
             @NotNull Object token,
             @NotNull FrameScheduler renderScheduler,
+            @NotNull Threading threading,
             @NotNull EventBus events
     ) throws IllegalCallerException, IllegalStateException;
 

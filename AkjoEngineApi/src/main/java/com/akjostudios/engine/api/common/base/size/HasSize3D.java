@@ -1,7 +1,7 @@
 package com.akjostudios.engine.api.common.base.size;
 
 /**
- * Applies to objects that have a size in 3D space.
+ * Applies to objects that have a size in physical 3D space.
  */
 @FunctionalInterface
 @SuppressWarnings({"unused", "UnusedReturnValue"})

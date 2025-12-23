@@ -7,6 +7,7 @@ import com.akjostudios.engine.api.common.mailbox.Mailbox;
 import com.akjostudios.engine.api.internal.token.EngineTokens;
 import com.akjostudios.engine.api.logging.Logger;
 import com.akjostudios.engine.api.threading.Threading;
+import com.akjostudios.engine.api.window.events.WindowBeforeSwapBuffersEvent;
 import com.akjostudios.engine.runtime.components.EventListenerRegistrar;
 import com.akjostudios.engine.runtime.crash.AkjoEngineExceptionHandler;
 import com.akjostudios.engine.runtime.impl.AkjoApplicationContext;
@@ -238,6 +239,7 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                 context.windows().__engine_init(
                         EngineTokens.token(),
                         context.scheduler().render(),
+                        context.threading(),
                         context.events()
                 );
             });
@@ -249,6 +251,11 @@ public class AkjoEngineRuntime implements SmartLifecycle {
                             GLFW.glfwPollEvents();
                         }
                     }
+            );
+
+            // Start render pipeline
+            context.events().subscribe(WindowBeforeSwapBuffersEvent.class,
+                    event -> event.window().__engine_renderCanvas(EngineTokens.token())
             );
 
             // Start application

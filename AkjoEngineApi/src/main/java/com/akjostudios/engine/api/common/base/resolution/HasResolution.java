@@ -1,7 +1,7 @@
 package com.akjostudios.engine.api.common.base.resolution;
 
 /**
- * Applies to objects that have a screen resolution.
+ * Applies to objects that have a resolution in pixels.
  */
 @FunctionalInterface
 @SuppressWarnings({"unused", "UnusedReturnValue"})
