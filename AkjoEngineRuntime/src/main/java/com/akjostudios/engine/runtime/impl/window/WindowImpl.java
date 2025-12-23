@@ -750,7 +750,7 @@ public final class WindowImpl implements Window {
             try {
                 callback.run();
             } catch (Throwable t) {
-                log.error("An error occured inside a render callback!", t);
+                log.error("An error occurred inside a render callback!", t);
             }
         });
 
