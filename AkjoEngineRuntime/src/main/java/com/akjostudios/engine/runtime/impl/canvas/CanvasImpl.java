@@ -13,16 +13,18 @@ import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RequiredArgsConstructor
 public final class CanvasImpl implements Canvas {
-    private final ConcurrentLinkedQueue<RenderCommand> queue = new ConcurrentLinkedQueue<>();
+    private final AtomicReference<ConcurrentLinkedQueue<RenderCommand>> queueRef =
+            new AtomicReference<>(new ConcurrentLinkedQueue<>());
 
     private final Window window;
 
     @Override
     public void clear(@NotNull IColor color) {
-        queue.add(new ClearCommand(color));
+        queueRef.get().add(new ClearCommand(color));
         window.requestRender();
     }
 
@@ -31,7 +33,7 @@ public final class CanvasImpl implements Canvas {
             @NotNull Texture texture,
             @NotNull IRenderPosition position
     ) {
-        queue.add(new DrawTextureCommand(texture, position));
+        queueRef.get().add(new DrawTextureCommand(texture, position));
         window.requestRender();
     }
 
@@ -43,10 +45,7 @@ public final class CanvasImpl implements Canvas {
         drawTexture(texture, position.retrieve(window));
     }
 
-    public void drainTo(@NotNull RenderCommand.Sink sink) throws Exception {
-        RenderCommand command;
-        while ((command = queue.poll()) != null) {
-            sink.accept(command);
-        }
+    public @NotNull ConcurrentLinkedQueue<RenderCommand> swapQueue() {
+        return queueRef.getAndSet(new ConcurrentLinkedQueue<>());
     }
 }

@@ -11,6 +11,7 @@ import com.akjostudios.engine.api.monitor.MonitorPosition;
 import com.akjostudios.engine.api.monitor.MonitorPositionProvider;
 import com.akjostudios.engine.api.monitor.ScreenPosition;
 import com.akjostudios.engine.api.render.backend.RenderBackend;
+import com.akjostudios.engine.api.render.command.RenderCommand;
 import com.akjostudios.engine.api.render.context.FrameInfo;
 import com.akjostudios.engine.api.render.context.RenderDevice;
 import com.akjostudios.engine.api.resource.asset.AssetManager;
@@ -33,6 +34,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -825,12 +827,20 @@ public final class WindowImpl implements Window {
             throw new IllegalStateException("❗ The canvas of a window must be rendered on the render thread!");
         }
 
+        backend.beginFrame(new FrameInfo(framebufferResolution()));
+        Queue<RenderCommand> commands = canvas.swapQueue();
         runRenderCallbacks();
+        var callbackCommands = canvas.swapQueue();
 
-        backend.beginFrame(new FrameInfo(
-                framebufferResolution()
-        ));
-        canvas.drainTo(backend::execute);
+        RenderCommand command;
+        while ((command = commands.poll()) != null) {
+            backend.execute(command);
+        }
+
+        while ((command = callbackCommands.poll()) != null) {
+            backend.execute(command);
+        }
+
         backend.endFrame();
     }
 

@@ -45,12 +45,13 @@ public final class CanvasRenderBackend implements RenderBackend {
                 if (!spritesBegun) {
                     try {
                         sprites.begin(device, currentFrame);
-                        sprites.draw(texture, position);
                         spritesBegun = true;
                     } catch (RenderResourceNotReadyException e) {
                         device.threading().requestRender();
                     }
                 }
+
+                sprites.draw(texture, position);
             }
             default -> {}
         }
